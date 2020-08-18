@@ -183,7 +183,15 @@ Thereafter a study of model training and test accuracy against k-mer length k wa
 
 ![kmer](../Images/VaryingKmer.png "k-mer vs Accuracy")
 
-It can be seen that k-length of 11 performed best on both training and test set. The test set accuracy achieved was 0.8.
+It can be seen that k-length of 11 performed best on both training and test set. The accuracy and recall score achieved on the test set was 0.8 while precision score was 0.837. The model has failed to correctly classify 5 among the 25 enzymes of the test set which were as follows:
+
+1. Umbellularia_californica_(UcFatB2)
+2. Cuphea_viscosisssima_(CvB2MT17)
+3. Cuphea_viscosisssima_(CvB2MT6)
+4. Cuphea_viscosisssima_(CvB2MT29)
+5. Umbellularia_californica_(UcFatB1)
+
+While it has already been reported that the Cuphea viscossima class of enzymes has extremely similar features and it is hard for a machine learning model to learn useful information from such a feature set, the model may have failed to learn important features relevant to the Umbellularia_california class of enzymes during training because both of them fell in the test set due to the random nature of our training set creation and unavailability of similar enzymes in the training set.
 
 To get a better estimate of the variance in model prediction, the model was simulated 10,000 times by varying the random seed with the above mentioned hyperparameters and k-mer length 11. This will result in different training data and initialization parameters for SVM.
 
@@ -196,7 +204,7 @@ The mean train accuracy was 0.93 and the mean test accuracy was 0.7. The standar
 ![testhist](../Images/ModelTestAcc.png "Test Accuracy Histogram")
 
 # Conclusion
-The model variance is high and the model test accuracy is highly dependent on the training set. 
+The model variance is high and the model test accuracy is highly dependent on the training set. The model has also failed to successfully learn the Cuphea viscossima class of enzymes due to their high sequence similarity. It is important that we add additional features to distinguish between the enzymes of this class.
 
 # Future Work
 The model variance can be reduced by:

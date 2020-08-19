@@ -1,0 +1,10 @@
+1. iFeature: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6658705/
+2. https://www.sciencedirect.com/science/article/pii/S147692711000071X
+3. https://www.biorxiv.org/content/10.1101/2019.12.31.890699v2.full
+4. https://www.nature.com/articles/s41592-019-0598-1
+5. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6061698/
+6. ProFET: https://academic.oup.com/bioinformatics/article/31/21/3429/194375
+7. AAindex: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2238890/
+8. https://www.hindawi.com/journals/bmri/2015/867516/
+9. ProtVec: https://arxiv.org/abs/1503.05140
+10. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2253224/

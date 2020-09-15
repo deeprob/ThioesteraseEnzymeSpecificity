@@ -1,8 +1,10 @@
 name: thio-env
 channels:
 - conda-forge
+- anaconda
 - defaults
 dependencies:
+- xlrd=1.2.0=py_0
 - bzip2=1.0.8=h516909a_3
 - dill=0.3.2=pyh9f0ad1d_0
 - gdbm=1.18=h941a26a_0
@@ -11,6 +13,7 @@ dependencies:
 - pypy3.6=7.3.1=h3e02ecb_1
 - python=3.6.7=h381d211_1004
 - python_abi=3.6=1_pypy36_pp73
+- tqdm=4.49.0=pyh9f0ad1d_0
 - _libgcc_mutex=0.1=main
 - argon2-cffi=20.1.0=py36h7b6447c_1
 - attrs=20.1.0=py_0

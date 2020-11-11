@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 class SVM:
     
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=20,regC=1,kern='rbf',optimize=True,verbose=True):
+    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=20,regC=1,kern='rbf',optimize=False,verbose=True):
         np.random.seed(random_seed)
         
         self.Xtrain = Xtrain

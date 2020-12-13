@@ -1,3 +1,5 @@
 .ipynb_checkpoints/
 **/__pycache__/
-.DS_Store/
+**/.DS_Store/
+Data/.DS_Store/
+FeatEngg/__pycache__/

@@ -1,7 +1,7 @@
 name: thio-env
 channels:
-- conda-forge
 - anaconda
+- conda-forge
 - defaults
 dependencies:
 - xlrd=1.2.0=py_0

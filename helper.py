@@ -10,7 +10,7 @@ def parseEnzymeFile(enzyme_datafile):
         for lines in f:
             line  = lines.strip().split(',')
             enzyme_names.append(line[0])
-            X.append(line[1])
+            X.append(list(line[1]))
             y.append(int(line[2]))
 
     return np.array(X),np.array(y),np.array(enzyme_names)

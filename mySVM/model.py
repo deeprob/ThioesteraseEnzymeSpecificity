@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 class SVM:
     
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=20,regC=1,kern='rbf',optimize=False,verbose=True):
+    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=20,regC=1,kern='rbf',probability=False,optimize=False,verbose=True):
         np.random.seed(random_seed)
         
         self.Xtrain = Xtrain
@@ -22,7 +22,7 @@ class SVM:
         self.ytrain = ytrain
         self.ytest = ytest
         
-        pipeline = self._make_pipeline(pca_comp,regC,kern,random_seed)
+        pipeline = self._make_pipeline(pca_comp,regC,kern,random_seed,probability)
         
         self.model = pipeline.fit(self.Xtrain,self.ytrain)
         self.ypredtrain = self.model.predict(self.Xtrain)
@@ -61,7 +61,7 @@ class SVM:
         
                 
         
-    def _make_pipeline(self,n_comp,c,k,rs):
-        steps = [('pca',PCA(n_components=n_comp)),('SVM',SVC(C=c,gamma='scale',kernel=k,random_state=rs))]
+    def _make_pipeline(self,n_comp,c,k,rs,prob):
+        steps = [('pca',PCA(n_components=n_comp,random_state=rs)),('SVM',SVC(C=c,gamma='scale',kernel=k,random_state=rs,max_iter=-1,probability=prob))]
         pipe = Pipeline(steps)
         return pipe

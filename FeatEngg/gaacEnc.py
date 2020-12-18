@@ -2,9 +2,9 @@ import numpy as np
 
 class GAAC:
     def __init__(self):
-        self.groups = {'G':'g1','A':'g1','V':'g1','L':'g1','M':'g1','I':'g1','F':'g2','Y':'g2','W':'g2',
-                       'K':'g3','R':'g3','H':'g3', 'D':'g4', 'E':'g4','S':'g5','T':'g5','C':'g5','P':'g5',
-                       'N':'g5','Q':'g5','X':'g5'}
+        self.groups = {'G':'a','A':'a','V':'a','L':'a','M':'a','I':'a','F':'b','Y':'b','W':'b',
+                       'K':'c','R':'c','H':'c', 'D':'d', 'E':'d','S':'e','T':'e','C':'e','P':'e',
+                       'N':'e','Q':'e','X':'f','-':'f'}
         
     def transform(self,sequences):
         

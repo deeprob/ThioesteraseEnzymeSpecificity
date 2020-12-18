@@ -1,10 +1,11 @@
 import numpy as np
 
 class Ngram:
-    def __init__(self,sequences,n,step):
+    def __init__(self,sequences,n,step,inc_count=False):
         self.sequences = sequences
         self.n = n
         self.step = step
+        self.inc_count=inc_count
         self.encoder_dict={}
     
     def fit(self):
@@ -39,7 +40,10 @@ class Ngram:
                 seq = sequence[i:i+self.n]
 
                 if seq in self.encoder_dict:
-                    ind_vector[self.encoder_dict[seq]] = 1
+                    if self.inc_count:
+                        ind_vector[self.encoder_dict[seq]] += 1
+                    else:
+                        ind_vector[self.encoder_dict[seq]] = 1
 
                 i+=self.step
 

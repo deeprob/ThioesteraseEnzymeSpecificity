@@ -63,9 +63,9 @@ class PosModel:
 
 class NGModel:
     # NGram model
-    def __init__(self,enzs,X,y,tr_idx,te_idx,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,random_seed=None,optimizeQ=False,verboseQ=False):
+    def __init__(self,enzs,X,y,tr_idx,te_idx,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,random_seed=None,inc_count=False,optimizeQ=False,verboseQ=False):
         self.Xtrain_raw,self.ytrain,self.Xtest_raw,self.ytest = X[tr_idx],y[tr_idx],X[te_idx],y[te_idx]
-        self.ng = ngramEnc.Ngram(self.Xtrain_raw,k,s)
+        self.ng = ngramEnc.Ngram(self.Xtrain_raw,k,s,inc_count)
         self.ng.fit()
         self.Xtrain,self.Xtest = self.ng.transform(self.Xtrain_raw),self.ng.transform(self.Xtest_raw)
         self.pca_components=pca_components
@@ -107,12 +107,12 @@ class NGModel:
 
 class GAACModel:
     # GAAC-NGram model
-    def __init__(self,enzs,X,y,tr_idx,te_idx,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=20,kernparam='rbf',nestparam=15,lrateparam=0.5,mdepthparam=3,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,optimizeQ=False,verboseQ=False,random_seed=None):
+    def __init__(self,enzs,X,y,tr_idx,te_idx,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=20,kernparam='rbf',nestparam=15,lrateparam=0.5,mdepthparam=3,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,inc_count=True,optimizeQ=False,verboseQ=False,random_seed=None):
         self.gc = gaacEnc.GAAC()
         X_gaac = self.gc.transform(X)
         
         self.Xtrain_raw,self.ytrain,self.Xtest_raw,self.ytest = X_gaac[tr_idx],y[tr_idx],X_gaac[te_idx],y[te_idx]
-        self.ng = ngramEnc.Ngram(self.Xtrain_raw,k,s)
+        self.ng = ngramEnc.Ngram(self.Xtrain_raw,k,s,inc_count)
         self.ng.fit()
         self.Xtrain,self.Xtest = self.ng.transform(self.Xtrain_raw),self.ng.transform(self.Xtest_raw)
         self.pca_components=pca_components

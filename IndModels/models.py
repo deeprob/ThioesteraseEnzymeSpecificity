@@ -11,7 +11,7 @@ from NNClassifier.model import NN
 class Model:
     def __init__(self,enzs,X,y,tr_idx,te_idx,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,
                  kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),
-                 lrateinit=0.1,regparam=0.01,random_seed=None,optimizeQ=False,verboseQ=False):
+                 lrateinit=0.1,regparam=0.01,random_seed=None,probability=False,optimizeQ=False,verboseQ=False):
     
         self.ytrain,self.ytest = y[tr_idx],y[te_idx]
         self.pca_components=pca_components
@@ -22,6 +22,7 @@ class Model:
         if SVM:
             self.regCparam=regCparam
             self.kernparam=kernparam
+            self.prob=probability
             
         elif GBC:
             self.nestparam=nestparam
@@ -39,7 +40,7 @@ class Model:
             raise ValueError('No model initiated')
             
     def get_SVM(self):
-        return SVM(self.Xtrain,self.Xtest,self.ytrain,self.ytest,pca_comp=self.pca_components,regC=self.regCparam,kern=self.kernparam,optimize=self.optimizeQ,verbose=self.verboseQ,random_seed=self.rs)
+        return SVM(self.Xtrain,self.Xtest,self.ytrain,self.ytest,pca_comp=self.pca_components,regC=self.regCparam,kern=self.kernparam,optimize=self.optimizeQ,verbose=self.verboseQ,random_seed=self.rs,probability=self.prob)
     
     def get_GBC(self):
         return GBC(self.Xtrain,self.Xtest,self.ytrain,self.ytest,pca_comp=self.pca_components,nest=self.nestparam,lrate=self.lrateparam,mdepth=self.mdepthparam,optimize=self.optimizeQ,verbose=self.verboseQ,random_seed=self.rs)
@@ -52,7 +53,7 @@ class PosModel(Model):
     # Position-Model By Mike
     def __init__(self,pickle_file_path,enzs,X,y,tr_idx,te_idx,SVM=True,GBC=False,NN=False,pca_components=40,
                  regCparam=1,kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,
-                 hlayer=(10,),lrateinit=0.1,regparam=0.01,random_seed=None,optimizeQ=False,verboseQ=False):
+                 hlayer=(10,),lrateinit=0.1,regparam=0.01,random_seed=None,probability=False,optimizeQ=False,verboseQ=False):
         
         self.file = pickle.load(open(pickle_file_path,'rb'))
         self.Pos_model_dict = {name:feat for name,feat in zip(self.file[0],self.file[1])}
@@ -60,7 +61,7 @@ class PosModel(Model):
         
         super().__init__(enzs,X,y,tr_idx,te_idx,SVM,GBC,NN,pca_components,regCparam,
                  kernparam,nestparam,lrateparam,mdepthparam,ssampleparam,hlayer,
-                 lrateinit,regparam,random_seed,optimizeQ,verboseQ)
+                 lrateinit,regparam,random_seed,probability,optimizeQ,verboseQ)
         
         
         if SVM:
@@ -89,7 +90,7 @@ class PosModel(Model):
     
 class NGModel(Model):
     # NGram model
-    def __init__(self,enzs,X,y,tr_idx,te_idx,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,random_seed=None,inc_count=False,optimizeQ=False,verboseQ=False):
+    def __init__(self,enzs,X,y,tr_idx,te_idx,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,random_seed=None,inc_count=False,probability=False,optimizeQ=False,verboseQ=False):
         self.Xtrain_raw,self.ytrain,self.Xtest_raw,self.ytest = X[tr_idx],y[tr_idx],X[te_idx],y[te_idx]
         self.ng = ngramEnc.Ngram(self.Xtrain_raw,k,s,inc_count)
         self.ng.fit()
@@ -101,7 +102,7 @@ class NGModel(Model):
 
         super().__init__(enzs,X,y,tr_idx,te_idx,SVM,GBC,NN,pca_components,regCparam,
                  kernparam,nestparam,lrateparam,mdepthparam,ssampleparam,hlayer,
-                 lrateinit,regparam,random_seed,optimizeQ,verboseQ)
+                 lrateinit,regparam,random_seed,probability,optimizeQ,verboseQ)
 
         
         if SVM:
@@ -122,7 +123,7 @@ class NGModel(Model):
 
 class GAACModel(Model):
     # GAAC-NGram model
-    def __init__(self,enzs,X,y,tr_idx,te_idx,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=20,kernparam='rbf',nestparam=15,lrateparam=0.5,mdepthparam=3,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,inc_count=True,optimizeQ=False,verboseQ=False,random_seed=None):
+    def __init__(self,enzs,X,y,tr_idx,te_idx,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=20,kernparam='rbf',nestparam=15,lrateparam=0.5,mdepthparam=3,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,inc_count=True,probability=False,optimizeQ=False,verboseQ=False,random_seed=None):
 
         self.gc = gaacEnc.GAAC()
         X_gaac = self.gc.transform(X)
@@ -133,7 +134,7 @@ class GAACModel(Model):
 
         super().__init__(enzs,X,y,tr_idx,te_idx,SVM,GBC,NN,pca_components,regCparam,
                  kernparam,nestparam,lrateparam,mdepthparam,ssampleparam,hlayer,
-                 lrateinit,regparam,random_seed,optimizeQ,verboseQ)
+                 lrateinit,regparam,random_seed,probability,optimizeQ,verboseQ)
         
         if SVM:
             self.SVMobject = self.get_SVM()

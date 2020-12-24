@@ -11,10 +11,23 @@ def parseEnzymeFile(enzyme_datafile):
         for lines in f:
             line  = lines.strip().split(',')
             enzyme_names.append(line[0])
-            X.append(line[1])
+            X.append(line[1].upper())
             y.append(int(line[2]))
 
-    return np.array(X),np.array(y),np.array(enzyme_names)
+    return np.array(X,dtype='str'),np.array(y,dtype=int),np.array(enzyme_names,dtype='str')
+
+def parseEnzymeFileRegression(enzyme_datafile):
+    with open(enzyme_datafile,'r') as f:
+        enzyme_names = []
+        X = []
+        y = []
+        for lines in f:
+            line  = lines.strip().split(',')
+            enzyme_names.append(line[0])
+            X.append(line[1].upper())
+            y.append(float(line[2]))
+
+    return np.array(X,dtype='str'),np.array(y,dtype=float),np.array(enzyme_names,dtype='str')
 
 # split to train-test properly
 
@@ -25,10 +38,14 @@ def modified_split(enzyme_names,enz_with_acc_file=None,split=0.25):
 #             original_enzymes.add(lines.strip())
     r = range(len(enzyme_names))
 #    original_idx = [idx for idx in r if enzyme_names[idx] in original_enzymes]
+    no_label_1 = np.where(enzyme_names=='Cuphea_hookeriana(short)_(ChFatB2)')[0][0]
+    no_label_2 = np.where(enzyme_names=='Cuphea_viscosisssima_(CvB2MT41')[0][0]
     cuphea_idx = [idx for idx in r if enzyme_names[idx].startswith('Cuphea_viscosisssima')]
     rTE_idx = [idx for idx in r if enzyme_names[idx].startswith('rTE')]
     sp_idx = cuphea_idx+rTE_idx
-    other_idx = [idx for idx in r if idx not in sp_idx]
+    other_idx = [idx for idx in r if idx not in sp_idx] 
+    cuphea_idx.remove(no_label_2)
+    other_idx.remove(no_label_1)
 #    np.random.shuffle(original_idx)
     np.random.shuffle(other_idx)
     np.random.shuffle(cuphea_idx)
@@ -41,6 +58,8 @@ def modified_split(enzyme_names,enz_with_acc_file=None,split=0.25):
     lr_other = int(split*len(other_idx))
     lr_cuphea = int(split*len(cuphea_idx))
     lr_rTE = int(split*len(rTE_idx))
+    
+    must_test_label = np.array([no_label_1,no_label_2])
     
     test_split_idx = np.concatenate((other_idx[:lr_other],cuphea_idx[:lr_cuphea],rTE_idx[:lr_rTE]),axis=None)
     train_split_idx = np.concatenate((other_idx[lr_other:],cuphea_idx[lr_cuphea:],rTE_idx[lr_rTE:]),axis=None)

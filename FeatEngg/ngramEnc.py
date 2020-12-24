@@ -13,7 +13,10 @@ class Ngram:
         for sequence in self.sequences:
             i=0
             while i+self.n<=len(sequence):
-                seq = sequence[i:i+self.n]
+                if type(sequence)==str:
+                    seq = sequence[i:i+self.n] 
+                else:
+                    seq = ''.join(sequence[i:i+self.n])
 
                 if seq in ngramdict:
                     ngramdict[seq] += 1
@@ -37,8 +40,11 @@ class Ngram:
 
             i=0
             while i+self.n<=len(sequence):
-                seq = sequence[i:i+self.n]
-
+                if type(sequence)==str:
+                    seq = sequence[i:i+self.n] 
+                else:
+                    seq = ''.join(sequence[i:i+self.n])
+                    
                 if seq in self.encoder_dict:
                     if self.inc_count:
                         ind_vector[self.encoder_dict[seq]] += 1

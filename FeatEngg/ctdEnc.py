@@ -3,7 +3,7 @@ import itertools
 
 class CTD:
     def __init__(self,F='CTD'):
-        '''F can be C,T,D,CT or CTD'''
+        '''F can be C,T,D,CT,CD,DT or CTD'''
         
         self.F = F
         # Attributes
@@ -34,9 +34,12 @@ class CTD:
         
         for s in seq:
             
+            if s=='-':
+                continue
+            
             # transition
             curr = attr_dict[s]
-            if prev:
+            if prev is not None:
                 if curr!=prev:
                     if curr>prev:
                         tran_val = str(prev) + str(curr)
@@ -52,6 +55,8 @@ class CTD:
 
         attr_curr_dist = {0:0,1:0,2:0}
         for sidx,s in enumerate(seq):
+            if s=='-':
+                continue
             curr_cat = attr_dict[s]
             total_val = attr_comp_dict[attr_dict[s]]
             attr_curr_dist[curr_cat]+=1
@@ -77,7 +82,7 @@ class CTD:
         tran = [v/(len(seq)-1) for v in attr_transition_dict.values()]
         dist = [v/(len(seq)) for v in attr_distribution_dict.values()]
         
-        ifdict = {'C':comp,'T':tran,'D':dist,'CT':comp+tran,'CD':comp+dist,'CTD':comp+tran+dist}
+        ifdict = {'C':comp,'T':tran,'D':dist,'CT':comp+tran,'CD':comp+dist,'DT':tran+dist,'CTD':comp+tran+dist}
         
         return ifdict[self.F]
     

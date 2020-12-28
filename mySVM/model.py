@@ -13,7 +13,7 @@ from sklearn.pipeline import Pipeline
 
 class SVM:
     
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=20,regC=1,kern='rbf',probability=False,optimize=False,verbose=True):
+    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=40,regC=1,kern='rbf',probability=False,optimize=False,verbose=True,classweight=None):
         np.random.seed(random_seed)
         
         self.Xtrain = Xtrain
@@ -40,10 +40,10 @@ class SVM:
         if optimize:
             print('-'*5+'Hyperparameter Optimization'+'-'*5)
 
-            parameters = {'pca__n_components':[1,5,20,40],
-                         'SVM__C':[1,20,100],
+            parameters = {'pca__n_components':[5,20,40],
+                         'SVM__C':[0.1,1,20,50],
                          'SVM__gamma':['scale','auto',0.1],
-                         'SVM__kernel':['linear','rbf']}
+                         'SVM__kernel':['linear','rbf','sigmoid']}
 
             self.grid = GridSearchCV(pipeline, param_grid=parameters, cv=3, n_jobs=-1,scoring='accuracy',verbose=10)
             self.grid.fit(self.Xtrain, self.ytrain)

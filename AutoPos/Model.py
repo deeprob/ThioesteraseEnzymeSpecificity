@@ -7,13 +7,17 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.feature_selection import SelectKBest,f_classif,mutual_info_classif,chi2
 import sys
 sys.path.append('../')
+
 import helper
 
 class AutoPosModel:
-    def __init__(self,Aligned_Enzyme_Datafile,scoring_func,savedfilename,n_pos):
+    def __init__(self,Aligned_Enzyme_Datafile,scoring_func,savedfilename,n_pos,tr_idx=None):
         self.X,self.y,self.enz_names = helper.parseEnzymeFile(Aligned_Enzyme_Datafile)
         if self.X.ndim==1:
             self.X = np.array(list(map(list,self.X)))
+        if tr_idx is not None:
+            self.X = self.X[tr_idx,:]
+            self.y = self.y[tr_idx]
         self.scfunc = scoring_func
         self.filename =  savedfilename
         self.n_pos = n_pos
@@ -21,8 +25,8 @@ class AutoPosModel:
     
 class OhePosModel(AutoPosModel):
     
-    def __init__(self,Aligned_Enzyme_Datafile,scoring_func,savedfilename,n_pos,imp=True):
-        super().__init__(Aligned_Enzyme_Datafile,scoring_func,savedfilename,n_pos)
+    def __init__(self,Aligned_Enzyme_Datafile,scoring_func,savedfilename,n_pos,imp=True,training=None):
+        super().__init__(Aligned_Enzyme_Datafile,scoring_func,savedfilename,n_pos,training)
         
         self.ohe_enc = self._getOHEncoder(self.X)
         self.X_enc = self.ohe_enc.transform(self.X).toarray()

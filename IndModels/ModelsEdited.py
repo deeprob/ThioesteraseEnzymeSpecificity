@@ -10,7 +10,7 @@ import numpy as np
 
 sys.path.append('../')
 from FeatEngg import ngramEnc,ctdEnc,gaacEnc
-from mySVM.model import SVM
+from mySVM.model import SVM,SVMRegressor
 from GBClassifier.model import GBC
 from NNClassifier.model import NN
 
@@ -49,12 +49,16 @@ class Model:
 
     def get_NN(self):
         return NN(self.Xtrain,self.Xtest,self.ytrain,self.ytest,pca_comp=self.pca_components,hlayers=self.hlayer,lrateinit=self.lrateparam,regparam=self.reg,optimize=self.optimizeQ,verbose=self.verboseQ,random_seed=self.rs)
+    
+    def get_SVMRegressor(self):
+        return SVMRegressor(self.Xtrain,self.Xtest,self.ytrain,self.ytest,pca_comp=self.pca_components,regC=self.regCparam,kern=self.kernparam,optimize=self.optimizeQ,verbose=self.verboseQ,random_seed=self.rs)
+
 
 
     
 class NGModel(Model):
     # NGram model
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,random_seed=None,inc_count=False,optimizeQ=False,verboseQ=False):
+    def __init__(self,Xtrain,Xtest,ytrain,ytest,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,random_seed=None,inc_count=False,optimizeQ=False,verboseQ=False,regression=False):
         super().__init__(Xtrain,Xtest,ytrain,ytest,SVM,GBC,NN,pca_components,regCparam,kernparam,nestparam,lrateparam,mdepthparam,ssampleparam,hlayer,lrateinit,regparam,random_seed,inc_count,optimizeQ,verboseQ)
        
         self.Xtrain_raw,self.Xtest_raw,self.ytrain,self.ytest = Xtrain,Xtest,ytrain,ytest
@@ -63,7 +67,7 @@ class NGModel(Model):
         self.Xtrain,self.Xtest = self.ng.transform(self.Xtrain_raw),self.ng.transform(self.Xtest_raw)
         
         if SVM:
-            self.SVMobject = self.get_SVM()
+            self.SVMobject = self.get_SVM() if not regression else self.get_SVMRegressor()
             self.model = self.SVMobject.model
             
         elif GBC:
@@ -80,7 +84,7 @@ class NGModel(Model):
 
 class GAACModel(Model):
     # GAAC-NGram model
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=20,kernparam='rbf',nestparam=15,lrateparam=0.5,mdepthparam=3,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,inc_count=True,optimizeQ=False,verboseQ=False,random_seed=None):
+    def __init__(self,Xtrain,Xtest,ytrain,ytest,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=20,kernparam='rbf',nestparam=15,lrateparam=0.5,mdepthparam=3,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,inc_count=True,optimizeQ=False,verboseQ=False,random_seed=None,regression=False):
 
         super().__init__(Xtrain,Xtest,ytrain,ytest,SVM,GBC,NN,pca_components,regCparam,kernparam,nestparam,lrateparam,mdepthparam,ssampleparam,hlayer,lrateinit,regparam,random_seed,inc_count,optimizeQ,verboseQ)
         
@@ -94,7 +98,7 @@ class GAACModel(Model):
 
         
         if SVM:
-            self.SVMobject = self.get_SVM()
+            self.SVMobject = self.get_SVM() if not regression else self.get_SVMRegressor()
             self.model = self.SVMobject.model
             
         elif GBC:

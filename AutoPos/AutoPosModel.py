@@ -21,7 +21,7 @@ import sys
 sys.path.append('../')
 
 import helper
-from mySVM.model import SVM
+from mySVM.model import SVM,SVMRegressor
 
 
 # In[19]:
@@ -178,15 +178,21 @@ class OhePosModel(AutoPosModel):
     
 class AutoPosClass(OhePosModel):
     
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,scoring_func,savedfilename,n_pos,imp=True,random_seed=None,pca_comp=40,regC=1,kern='rbf',probability=False,optimize=False,verbose=True,classweight=None):
+    def __init__(self,Xtrain,Xtest,ytrain,ytest,scoring_func,savedfilename,n_pos,imp=True,random_seed=None,pca_comp=40,regC=1,kern='rbf',probability=False,optimize=False,verbose=True,classweight=None,regression=False):
         
         super().__init__(Xtrain,Xtest,ytrain,ytest,scoring_func,savedfilename,n_pos,imp)
         
         self.Xtrain,self.Xtest = self.createEncodedArray(Xtrain,self.BestPositions),self.createEncodedArray(Xtest,self.BestPositions)
         
-        self.SVMobject = SVM(self.Xtrain,self.Xtest,self.ytrain,self.ytest,random_seed,pca_comp,regC,kern,probability,optimize,verbose,classweight)
+        self.SVMobject = self.get_SVM(self.Xtrain,self.Xtest,self.ytrain,self.ytest,random_seed,pca_comp,regC,kern,probability,optimize,verbose,classweight) if not regression else self.get_SVMRegressor(self.Xtrain,self.Xtest,self.ytrain,self.ytest,random_seed,pca_comp,regC,kern,optimize,verbose)
         
         pass
+    
+    def get_SVM(self,Xtrain,Xtest,ytrain,ytest,random_seed,pca_comp,regC,kern,probability,optimize,verbose,classweight):
+        return SVM(Xtrain,Xtest,ytrain,ytest,random_seed,pca_comp,regC,kern,probability,optimize,verbose,classweight)
+    
+    def get_SVMRegressor(self,Xtrain,Xtest,ytrain,ytest,random_seed,pca_comp,regC,kern,optimize,verbose):
+        return SVMRegressor(Xtrain,Xtest,ytrain,ytest,random_seed,pca_comp,regC,kern,optimize,verbose)
         
 
 

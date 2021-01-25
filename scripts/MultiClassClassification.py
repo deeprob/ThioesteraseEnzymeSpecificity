@@ -62,7 +62,7 @@ class Base:
 
 class TEClassification(Base):
     
-    def __init__(self,enzseqdata,labelfile,featurefiledirs,model='SVM',random_seed=None,pca_components=40,n_models=27,test_fraction=0.25):
+    def __init__(self,enzseqdata,labelfile,featurefiledirs,model='SVM',random_seed=None,pca_components=55,n_models=17,test_fraction=0.25):
         
         self.random_seed = random_seed
         self.model=model

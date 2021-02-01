@@ -2,11 +2,14 @@ from sklearn.metrics import accuracy_score,mean_squared_error
 import numpy as np
 
 class Ensemble:
-    def __init__(self,modelpreds,ytest):
+    def __init__(self,modelpreds,ytest=None):
         self.ytest = ytest
         self.modelpreds = modelpreds
         self.preds = np.array(self._get_predictions())
-        self.acc = accuracy_score(self.ytest,self.preds)
+        if self.ytest is not None:
+            self.acc = accuracy_score(self.ytest,self.preds)
+        else:
+            self.acc = None
         pass
     
     def _get_predictions(self):

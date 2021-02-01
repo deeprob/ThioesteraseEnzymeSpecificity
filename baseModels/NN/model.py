@@ -24,7 +24,9 @@ class NN:
         
         pipeline = self._make_pipeline(pca_comp,hlayers,lrateinit,regparam)
         
-        self.model = pipeline.fit(self.Xtrain,self.ytrain)
+        self.model = pipeline        
+        self.model.fit(self.Xtrain,self.ytrain) 
+
         self.ypredtrain = self.model.predict(self.Xtrain)
         self.ypredvalid = self.model.predict(self.Xvalid)
         self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
@@ -74,6 +76,13 @@ class NN:
             self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
             self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
         
+        if Xtest:
+            self.X=np.concatenate((self.Xtrain,self.Xvalid),axis=0)
+            self.y=np.concatenate((self.ytrain,self.yvalid),axis=0)
+            self.model.fit(self.X,self.y)
+            self.yhattrain = self.model.predict(self.X)
+            self.yhattest = self.model.predict(self.Xtest)
+            self.acc_tr = accuracy_score(self.y,self.yhattrain)
                 
         
     def _make_pipeline(self,n_comp,h,lr,reg):

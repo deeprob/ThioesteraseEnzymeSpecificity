@@ -23,7 +23,9 @@ class SVM:
         
         pipeline = self._make_pipeline(pca_comp,regC,kern,random_seed,probability,classweight)
         
-        self.model = pipeline.fit(self.Xtrain,self.ytrain) 
+        self.model = pipeline
+        
+        self.model.fit(self.Xtrain,self.ytrain) 
         
         self.ypredtrain = self.model.predict(self.Xtrain)
         self.ypredvalid = self.model.predict(self.Xvalid)
@@ -70,7 +72,16 @@ class SVM:
             self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
             self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
             
-        if Xtest:
+        if Xtest is not None:
+            self.Xtest=Xtest
+            self.X=np.concatenate((self.Xtrain,self.Xvalid),axis=0)
+            self.y=np.concatenate((self.ytrain,self.yvalid),axis=0)
+            self.model.fit(self.X,self.y)
+            self.yhattrain = self.model.predict(self.X)
+            self.yhattest = self.model.predict(self.Xtest)
+            self.acc_tr = accuracy_score(self.y,self.yhattrain)
+            
+            pass
             
 
                 

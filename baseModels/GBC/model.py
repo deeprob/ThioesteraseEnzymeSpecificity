@@ -24,7 +24,8 @@ class GBC:
         
         pipeline = self._make_pipeline(pca_comp,nest,lrate,mdepth,ssample)
         
-        self.model = pipeline.fit(self.Xtrain,self.ytrain)
+        self.model = pipeline        
+        self.model.fit(self.Xtrain,self.ytrain) 
         
         self.ypredtrain = self.model.predict(self.Xtrain)
         self.ypredvalid = self.model.predict(self.Xvalid)
@@ -74,7 +75,15 @@ class GBC:
             self.ypredvalid = self.model.predict(self.Xvalid)
             self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
             self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
-                
+
+        if Xtest:
+            self.X=np.concatenate((self.Xtrain,self.Xvalid),axis=0)
+            self.y=np.concatenate((self.ytrain,self.yvalid),axis=0)
+            self.model.fit(self.X,self.y)
+            self.yhattrain = self.model.predict(self.X)
+            self.yhattest = self.model.predict(self.Xtest)
+            self.acc_tr = accuracy_score(self.y,self.yhattrain)
+
         
     def _make_pipeline(self,n_comp,n,lr,md,ss):
         steps = [('pca',PCA(n_components=n_comp)),('GBC',GradientBoostingClassifier(n_estimators=n,learning_rate=lr,max_depth=md,subsample=ss))]

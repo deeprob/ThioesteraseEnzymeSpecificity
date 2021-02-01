@@ -69,6 +69,9 @@ class SVM:
             self.ypredvalid = self.model.predict(self.Xvalid)
             self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
             self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
+            
+        if Xtest:
+            
 
                 
         

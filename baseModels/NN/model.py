@@ -14,34 +14,42 @@ from tqdm import tqdm
 
 class NN:
     
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=20,hlayers=(10,),lrateinit=0.1,regparam=0.01,optimize=False,verbose=True):
+    def __init__(self,Xtrain,Xvalid,ytrain,yvalid,Xtest=None,random_seed=None,pca_comp=20,hlayers=(10,),lrateinit=0.1,regparam=0.01,optimize=False,verbose=True):
         np.random.seed(random_seed)
         
         self.Xtrain = Xtrain
-        self.Xtest = Xtest
+        self.Xvalid = Xvalid
         self.ytrain = ytrain
-        self.ytest = ytest
+        self.yvalid = yvalid
         
         pipeline = self._make_pipeline(pca_comp,hlayers,lrateinit,regparam)
         
         self.model = pipeline.fit(self.Xtrain,self.ytrain)
         self.ypredtrain = self.model.predict(self.Xtrain)
-        self.ypredtest = self.model.predict(self.Xtest)
+        self.ypredvalid = self.model.predict(self.Xvalid)
         self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
-        self.acc_test = accuracy_score(self.ytest,self.ypredtest)
+        self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
         
         
         if verbose:
             print('-'*5+'Initial Model Evaluation'+'-'*5)
             print('-'*5+'Training Accuracy:'+str(self.acc_train)+'-'*5)
-            print('-'*5+'Testing Accuracy:'+str(self.acc_test)+'-'*5)
+            print('-'*5+'Testing Accuracy:'+str(self.acc_valid)+'-'*5)
         
         # Hyperparameter Optimization
         
         if optimize:
-            print('-'*5+'Hyperparameter Optimization'+'-'*5)
+            if verbose:
+                print('-'*5+'Hyperparameter Optimization'+'-'*5)
+            
+            if self.Xtrain.shape[1]<75:
+                shape = self.Xtrain.shape[1]
+                try_pca = [int(0.5*shape),int(0.6*shape),int(0.75*shape)]
+            else:
+                try_pca= [40,55,75]
 
-            parameters = {'pca__n_components':[1,5,20,40],
+
+            parameters = {'pca__n_components':try_pca,
                          'NN__hidden_layer_sizes':[(10,5,),(5,),(10,)],
                          'NN__learning_rate_init':[0.1,0.01,0.001],
                          'NN__alpha':[0.01,0.001,0.0001]}
@@ -51,13 +59,20 @@ class NN:
             
             # print evaluation results
 
-            print("score = %3.2f" %(self.grid.score(self.Xtest,self.ytest)))
+            if verbose:
 
-            print(self.grid.best_params_)
+                print("score = %3.2f" %(self.grid.score(self.Xvalid,self.yvalid)))
+
+                print(self.grid.best_params_)
+
             
             best_pipeline = self.grid.best_estimator_
             
             self.model = best_pipeline
+            self.ypredtrain = self.model.predict(self.Xtrain)
+            self.ypredvalid = self.model.predict(self.Xvalid)
+            self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
+            self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
         
                 
         

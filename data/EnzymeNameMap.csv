@@ -12,7 +12,7 @@ enz_10,Cocos_nucifera_(CnFatB3)
 enz_11,Cuphea_aequipetala_(Ca1FatB1)
 enz_12,Cuphea_aequipetala_(Ca1FatB2)
 enz_13,Cuphea_avigera_(Ca2FatB2)
-enz_14,Cuphea_carthagenesis_(CcFatB)
+enz_14,Cuphea_carthagenesis_(CcFatB1)
 enz_15,Cuphea_decandra_(Cd1FatB1)
 enz_16,Cuphea_hookeriana(short)_(ChFatB2)
 enz_17,Cuphea_hookeriana_(ChFatB1)
@@ -85,7 +85,7 @@ enz_83,Jatropha_curcas
 enz_84,Lindera_communis
 enz_85,Micromonas_pusilla
 enz_86,Physcomitrella_patens
-enz_87,Prunus_sibirica_L._(Siberian apricot)
+enz_87,Prunus_sibirica_L._(Siberian
 enz_88,Ricinus_communis
 enz_89,rTE12
 enz_90,rTE15
@@ -108,8 +108,8 @@ enz_106,rTE8
 enz_107,Sorghum_bicolor_1
 enz_108,Sorghum_bicolor_2
 enz_109,Sorghum_bicolor_4
-enz_110,"UcFatB1(197M, M199H)"
-enz_111,"UcFatB1(R197M, M199H, T231K)"
+enz_110,"UcFatB1(197M,"
+enz_111,"UcFatB1(R197M,"
 enz_112,UcFatB1(T231K)
 enz_113,Umbellularia_californica_(UcFatB1)
 enz_114,Umbellularia_californica_(UcFatB2)

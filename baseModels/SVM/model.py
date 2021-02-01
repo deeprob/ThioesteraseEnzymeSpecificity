@@ -13,51 +13,63 @@ from sklearn.pipeline import Pipeline
 
 class SVM:
     
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=40,regC=1,kern='rbf',probability=False,optimize=False,verbose=True,classweight=None):
+    def __init__(self,Xtrain,Xvalid,ytrain,yvalid,Xtest=None,random_seed=None,pca_comp=40,regC=1,kern='rbf',probability=False,optimize=False,verbose=True,classweight=None):
         np.random.seed(random_seed)
         
         self.Xtrain = Xtrain
-        self.Xtest = Xtest
+        self.Xvalid = Xvalid
         self.ytrain = ytrain
-        self.ytest = ytest
+        self.yvalid = yvalid
         
         pipeline = self._make_pipeline(pca_comp,regC,kern,random_seed,probability,classweight)
         
-        self.model = pipeline.fit(self.Xtrain,self.ytrain)
-        self.ypredtrain = self.model.predict(self.Xtrain)
-        self.ypredtest = self.model.predict(self.Xtest)
-        self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
-        self.acc_test = accuracy_score(self.ytest,self.ypredtest)
+        self.model = pipeline.fit(self.Xtrain,self.ytrain) 
         
+        self.ypredtrain = self.model.predict(self.Xtrain)
+        self.ypredvalid = self.model.predict(self.Xvalid)
+        self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
+        self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
         
         if verbose:
             print('-'*5+'Initial Model Evaluation'+'-'*5)
             print('-'*5+'Training Accuracy:'+str(self.acc_train)+'-'*5)
-            print('-'*5+'Testing Accuracy:'+str(self.acc_test)+'-'*5)
+            print('-'*5+'Testing Accuracy:'+str(self.acc_valid)+'-'*5)
         
         # Hyperparameter Optimization
         
         if optimize:
-            print('-'*5+'Hyperparameter Optimization'+'-'*5)
+            if verbose:
+                print('-'*5+'Hyperparameter Optimization'+'-'*5)
+            
+            if self.Xtrain.shape[1]<75:
+                shape = self.Xtrain.shape[1]
+                try_pca = [int(0.5*shape),int(0.6*shape),int(0.75*shape)]
+            else:
+                try_pca= [40,55,75]
 
-            parameters = {'pca__n_components':[5,20,40],
-                         'SVM__C':[0.1,1,20,50],
-                         'SVM__gamma':['scale','auto',0.1],
+            parameters = {'pca__n_components':try_pca,
+                         'SVM__C':[0.1,1,20,30],
                          'SVM__kernel':['linear','rbf','sigmoid']}
 
-            self.grid = GridSearchCV(pipeline, param_grid=parameters, cv=3, n_jobs=-1,scoring='accuracy',verbose=10)
+            self.grid = GridSearchCV(pipeline, param_grid=parameters, cv=10, n_jobs=-1,scoring='accuracy',verbose=0)
             self.grid.fit(self.Xtrain, self.ytrain)
             
             # print evaluation results
+            if verbose:
 
-            print("score = %3.2f" %(self.grid.score(self.Xtest,self.ytest)))
+                print("score = %3.2f" %(self.grid.score(self.Xvalid,self.yvalid)))
 
-            print(self.grid.best_params_)
+                print(self.grid.best_params_)
             
             best_pipeline = self.grid.best_estimator_
             
             self.model = best_pipeline
         
+            self.ypredtrain = self.model.predict(self.Xtrain)
+            self.ypredvalid = self.model.predict(self.Xvalid)
+            self.acc_train = accuracy_score(self.ytrain,self.ypredtrain)
+            self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
+
                 
         
     def _make_pipeline(self,n_comp,c,k,rs,prob,cw):
@@ -67,44 +79,50 @@ class SVM:
 
 class SVMRegressor:
     
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,random_seed=None,pca_comp=20,regC=1,kern='rbf',optimize=False,verbose=True):
+    def __init__(self,Xtrain,Xvalid,ytrain,yvalid,Xtest,random_seed=None,pca_comp=20,regC=1,kern='rbf',optimize=False,verbose=True):
         np.random.seed(random_seed)
         
         self.Xtrain = Xtrain
-        self.Xtest = Xtest
+        self.Xvalid = Xvalid
         self.ytrain = ytrain
-        self.ytest = ytest
+        self.yvalid = yvalid
         
         pipeline = self._make_pipeline(pca_comp,regC,kern,random_seed)
         
         self.model = pipeline.fit(self.Xtrain,self.ytrain)
+        
         self.ypredtrain = self.model.predict(self.Xtrain)
-        self.ypredtest = self.model.predict(self.Xtest)
+        self.ypredvalid = self.model.predict(self.Xvalid)
         self.error_train = mean_squared_error(self.ytrain,self.ypredtrain)
-        self.error_test = mean_squared_error(self.ytest,self.ypredtest)
+        self.error_valid = mean_squared_error(self.yvalid,self.ypredvalid)
         
         
         if verbose:
             print('-'*5+'Initial Model Evaluation'+'-'*5)
-            print('-'*5+'Training Accuracy:'+str(self.acc_train)+'-'*5)
-            print('-'*5+'Testing Accuracy:'+str(self.acc_test)+'-'*5)
+            print('-'*5+'Training Accuracy:'+str(self.error_train)+'-'*5)
+            print('-'*5+'Testing Accuracy:'+str(self.error_valid)+'-'*5)
         
         # Hyperparameter Optimization
         
         if optimize:
             print('-'*5+'Hyperparameter Optimization'+'-'*5)
 
-            parameters = {'pca__n_components':[1,5,20,40],
-                         'SVM__C':[1,20,100],
-                         'SVM__gamma':['scale','auto',0.1],
-                         'SVM__kernel':['linear','rbf']}
+            if self.Xtrain.shape[1]<75:
+                shape = self.Xtrain.shape[1]
+                try_pca = [int(0.5*shape),int(0.6*shape),int(0.75*shape)]
+            else:
+                try_pca= [40,55,75]
+
+            parameters = {'pca__n_components':try_pca,
+                         'SVM__C':[0.1,1,20,30],
+                         'SVM__kernel':['linear','rbf','sigmoid']}
 
             self.grid = GridSearchCV(pipeline, param_grid=parameters, cv=3, n_jobs=-1,scoring='neg_mean_squared_error',verbose=10)
             self.grid.fit(self.Xtrain, self.ytrain)
             
             # print evaluation results
 
-            print("score = %3.2f" %(self.grid.score(self.Xtest,self.ytest)))
+            print("score = %3.2f" %(self.grid.score(self.Xvalid,self.yvalid)))
 
             print(self.grid.best_params_)
             
@@ -112,6 +130,10 @@ class SVMRegressor:
             
             self.model = best_pipeline
         
+            self.ypredtrain = self.model.predict(self.Xtrain)
+            self.ypredvalid = self.model.predict(self.Xvalid)
+            self.error_train = mean_squared_error(self.ytrain,self.ypredtrain)
+            self.error_valid = mean_squared_error(self.yvalid,self.ypredvalid)
                 
         
     def _make_pipeline(self,n_comp,c,k,rs):

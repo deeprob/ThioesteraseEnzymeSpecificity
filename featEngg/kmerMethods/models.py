@@ -1,132 +1,124 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import pickle
 import numpy as np
 
-import ngramEnc
-import gaacEnc
 
-import sys
-sys.path.append('../../')
-from baseModels.SVM.model import SVM
-from baseModels.GBC.model import GBC
-from baseModels.NN.model import NN
-
-class Model:
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,
-                 kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),
-                 lrateinit=0.1,regparam=0.01,random_seed=None,inc_count=False,optimizeQ=False,verboseQ=False):
+class GAA:
+    def __init__(self):
+        self.groups = {'G':'a','A':'a','V':'a','L':'a','M':'a','I':'a','F':'b','Y':'b','W':'b',
+                       'K':'c','R':'c','H':'c', 'D':'d', 'E':'d','S':'e','T':'e','C':'e','P':'e',
+                       'N':'e','Q':'e','X':'f','-':'f'}
         
-        self.ytrain,self.ytest = ytrain,ytest
-        self.pca_components=pca_components
-        self.optimizeQ=optimizeQ
-        self.verboseQ=verboseQ
-        self.rs=random_seed
+    def transform(self,sequences):
         
-        if SVM:
-            self.regCparam=regCparam
-            self.kernparam=kernparam
-            
-        elif GBC:
-            self.nestparam=nestparam
-            self.lrateparam=lrateparam
-            self.mdepthparam=mdepthparam
-
-
-        elif NN:
-            self.hlayer=hlayer
-            self.lrateparam=lrateinit
-            self.reg=regparam
-
-            
-        else:
-            raise ValueError('No model initiated')
-            
-    def get_SVM(self):
-        return SVM(self.Xtrain,self.Xtest,self.ytrain,self.ytest,pca_comp=self.pca_components,regC=self.regCparam,kern=self.kernparam,optimize=self.optimizeQ,verbose=self.verboseQ,random_seed=self.rs)
+        X_gaa = []
+        for seq in sequences:
+            curr_seq = ''
+            for i in seq:
+                curr_seq+=self.groups[i]
+                
+            X_gaa.append(curr_seq)
+        
+        return np.array(X_gaa) 
     
-    def get_GBC(self):
-        return GBC(self.Xtrain,self.Xtest,self.ytrain,self.ytest,pca_comp=self.pca_components,nest=self.nestparam,lrate=self.lrateparam,mdepth=self.mdepthparam,optimize=self.optimizeQ,verbose=self.verboseQ,random_seed=self.rs)
+    
+class Ngram:
+    def __init__(self,sequences,n,step,inc_count=False):
+        self.sequences = sequences
+        self.n = n
+        self.step = step
+        self.inc_count=inc_count
+        self.encoder_dict={}
+    
+    def fit(self):
+        ngramdict = dict()
+        for sequence in self.sequences:
+            i=0
+            while i+self.n<=len(sequence):
+                if type(sequence)==str:
+                    seq = sequence[i:i+self.n] 
+                else:
+                    seq = ''.join(sequence[i:i+self.n])
 
-    def get_NN(self):
-        return NN(self.Xtrain,self.Xtest,self.ytrain,self.ytest,pca_comp=self.pca_components,hlayers=self.hlayer,lrateinit=self.lrateparam,regparam=self.reg,optimize=self.optimizeQ,verbose=self.verboseQ,random_seed=self.rs)
+                if seq in ngramdict:
+                    ngramdict[seq] += 1
+                else:
+                    ngramdict[seq] = 1
+                i+=self.step
+
+        feature_list = sorted([k for k,v in ngramdict.items() if v>1])
+        self.encoder_dict = dict(zip(feature_list,list(range(len(feature_list)))))
+        return 
+
+    def transform(self,sequences):
+        
+        if not self.encoder_dict:
+            raise ValueError('Need to fit first')
+
+        X_motif = []
+
+        for sequence in sequences:
+            ind_vector = np.zeros(len(self.encoder_dict))
+
+            i=0
+            while i+self.n<=len(sequence):
+                if type(sequence)==str:
+                    seq = sequence[i:i+self.n] 
+                else:
+                    seq = ''.join(sequence[i:i+self.n])
+                    
+                if seq in self.encoder_dict:
+                    if self.inc_count:
+                        ind_vector[self.encoder_dict[seq]] += 1
+                    else:
+                        ind_vector[self.encoder_dict[seq]] = 1
+
+                i+=self.step
+
+            X_motif.append(ind_vector)
+
+        return np.array(X_motif)
 
 
     
-class NGModel(Model):
+class ngModel:
     # NGram model
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=1,kernparam='linear',nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,random_seed=None,inc_count=False,optimizeQ=False,verboseQ=False):
+    def __init__(self,Xtrain,Xvalid,Xtest=None,k=7,s=1,inc_count=False):
         
-        super().__init__(Xtrain,Xtest,ytrain,ytest)
-
-        self.Xtrain_raw,self.Xtest_raw = Xtrain,Xtest
-        self.ng = ngramEnc.Ngram(self.Xtrain_raw,k,s,inc_count)
+        self.Xtrain_raw,self.Xvalid_raw = Xtrain,Xvalid
+        self.ng = Ngram(self.Xtrain_raw,k,s,inc_count)
         self.ng.fit()
-        self.Xtrain,self.Xtest = self.ng.transform(self.Xtrain_raw),self.ng.transform(self.Xtest_raw)
-        self.pca_components=pca_components
-        self.optimizeQ=optimizeQ
-        self.verboseQ=verboseQ
-        self.rs=random_seed
-
+        self.Xtrain,self.Xvalid = self.ng.transform(self.Xtrain_raw),self.ng.transform(self.Xvalid_raw)
         
-        if SVM:
-            self.SVMobject = self.get_SVM()
-            self.model = self.SVMobject.model
-            
-        elif GBC:
-            self.GBCobject=self.get_GBC()
-            self.model=self.GBCobject.model
-
-        elif NN:
-            self.NNobject=self.get_NN()
-            self.model=self.NNobject.model
-            
+        if Xtest is not None:
+            self.Xtest=self.ng.transform(Xtest)
         else:
-            raise ValueError('No model initiated')
+            self.Xtest=None
+            
+
+
         
 
-class GAACModel(Model):
-    # GAAC-NGram model
-    def __init__(self,Xtrain,Xtest,ytrain,ytest,k=7,s=1,SVM=True,GBC=False,NN=False,pca_components=40,regCparam=20,kernparam='rbf',nestparam=15,lrateparam=0.5,mdepthparam=3,ssampleparam=1,hlayer=(5,),lrateinit=0.1,regparam=0.01,inc_count=True,optimizeQ=False,verboseQ=False,random_seed=None):
+class gaangModel:
+    # GAA-NGram model
+    def __init__(self,Xtrain,Xvalid,Xtest=None,k=7,s=1,inc_count=True):
 
-        self.gc = gaacEnc.GAAC()
+        self.gc = GAA()
         X_gaac_train = self.gc.transform(Xtrain)
-        X_gaac_test = self.gc.transform(Xtest)
-        self.Xtrain_raw,self.ytrain,self.Xtest_raw,self.ytest = X_gaac_train,ytrain,X_gaac_test,ytest
-        self.ng = ngramEnc.Ngram(self.Xtrain_raw,k,s,inc_count)
+        X_gaac_valid = self.gc.transform(Xvalid)
+        self.Xtrain_raw,self.Xvalid_raw = X_gaac_train,X_gaac_valid
+        self.ng = Ngram(self.Xtrain_raw,k,s,inc_count)
         self.ng.fit()
-        self.Xtrain,self.Xtest = self.ng.transform(self.Xtrain_raw),self.ng.transform(self.Xtest_raw)
-
-        super().__init__(Xtrain,Xtest,ytrain,ytest,SVM,GBC,NN,pca_components,regCparam,
-                 kernparam,nestparam=100,lrateparam=0.1,mdepthparam=1,ssampleparam=1,hlayer=(5,),
-                 lrateinit=0.1,regparam=0.01,random_seed=None,inc_count=False,optimizeQ=False,verboseQ=False)
+        self.Xtrain,self.Xvalid = self.ng.transform(self.Xtrain_raw),self.ng.transform(self.Xvalid_raw)
         
-        if SVM:
-            self.SVMobject = self.get_SVM()
-            self.model = self.SVMobject.model
-            
-        elif GBC:
-            self.GBCobject=self.get_GBC()
-            self.model=self.GBCobject.model
-            
-        elif NN:
-            self.NNobject=self.get_NN()
-            self.model=self.NNobject.model
-
-            
+        if Xtest is not None:
+            self.Xtest=self.ng.transform(Xtest)
         else:
-            raise ValueError('No model initiated')
+            self.Xtest=None
 
-
-# In[11]:
-
+        
+        
 
 if __name__=='__main__':
-    import helper
     import pandas as pd
     from sklearn.model_selection import train_test_split
     enz_datafile = '../../data/SeqFile/EnzymeSequence.csv'
@@ -138,7 +130,5 @@ if __name__=='__main__':
     X = df.iloc[:,1].values
     y = df.iloc[:,-1].values
     X_train, X_test, y_train, y_test,enz_train,enz_test = train_test_split(X, y,enz_names, test_size=0.25, random_state=7)
-    ngmodel = NGModel(X_train,X_test,y_train,y_test)
-    gaamodel = GAACModel(X_train,X_test,y_train,y_test)
-    print(ngmodel.SVMobject.acc_test,gaamodel.SVMobject.acc_test)
-
+    ngmodel = ngModel(X_train,X_test)
+    gaamodel = gaangModel(X_train,X_test)

@@ -240,6 +240,39 @@ Cupla_5 -----> 1
 Cupla_6 -----> 3
 Cupla_7 -----> 3
 --------------------------------------------------
+Model Name: gappyKernel
+Cupko_FatB1 -----> 1
+Cupko_FatB2 -----> 1
+Cupla_1 -----> 1
+Cupla_2 -----> 1
+Cupla_3 -----> 1
+Cupla_4 -----> 1
+Cupla_5 -----> 1
+Cupla_6 -----> 3
+Cupla_7 -----> 3
+--------------------------------------------------
+Model Name: mismatchKernel
+Cupko_FatB1 -----> 1
+Cupko_FatB2 -----> 1
+Cupla_1 -----> 1
+Cupla_2 -----> 1
+Cupla_3 -----> 1
+Cupla_4 -----> 1
+Cupla_5 -----> 1
+Cupla_6 -----> 3
+Cupla_7 -----> 3
+--------------------------------------------------
+Model Name: spectrumKernel
+Cupko_FatB1 -----> 1
+Cupko_FatB2 -----> 1
+Cupla_1 -----> 1
+Cupla_2 -----> 1
+Cupla_3 -----> 1
+Cupla_4 -----> 1
+Cupla_5 -----> 1
+Cupla_6 -----> 3
+Cupla_7 -----> 3
+--------------------------------------------------
 Model Name: rpm_pssm
 Cupko_FatB1 -----> 1
 Cupko_FatB2 -----> 1

@@ -13,7 +13,7 @@ from sklearn.pipeline import Pipeline
 
 class SVM:
     
-    def __init__(self,Xtrain,Xvalid,ytrain,yvalid,Xtest=None,random_seed=None,pca_comp=40,regC=1,kern='rbf',probability=False,optimize=False,verbose=True,classweight=None):
+    def __init__(self,Xtrain,Xvalid,ytrain,yvalid,Xtest=None,random_seed=None,pca_comp=40,regC=1,kern='rbf',probability=False,optimize=False,verbose=True,classweight=None,multi_jobs=True):
         np.random.seed(random_seed)
         
         self.Xtrain = Xtrain
@@ -52,8 +52,13 @@ class SVM:
             parameters = {'pca__n_components':try_pca,
                          'SVM__C':[0.1,1,20,30],
                          'SVM__kernel':['linear','rbf','sigmoid']}
+            
+            if multi_jobs:
+                self.n_jobs=-1
+            else:
+                self.n_jobs=1
 
-            self.grid = GridSearchCV(pipeline, param_grid=parameters, cv=10, n_jobs=-1,scoring='accuracy',verbose=0)
+            self.grid = GridSearchCV(pipeline, param_grid=parameters, cv=10, n_jobs=self.n_jobs,scoring='accuracy',verbose=0)
             self.grid.fit(self.Xtrain, self.ytrain)
             
             # print evaluation results

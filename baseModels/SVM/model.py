@@ -3,7 +3,7 @@
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import Normalizer
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split,GridSearchCV
 from sklearn.metrics import mean_squared_error,accuracy_score
@@ -92,7 +92,7 @@ class SVM:
                 
         
     def _make_pipeline(self,n_comp,c,k,rs,prob,cw):
-        steps = [('pca',PCA(n_components=n_comp,random_state=rs)),('SVM',SVC(C=c,gamma='scale',kernel=k,random_state=rs,max_iter=-1,probability=prob,class_weight=cw))]
+        steps = [('normalize',Normalizer()),('pca',PCA(n_components=n_comp,random_state=rs)),('SVM',SVC(C=c,gamma='scale',kernel=k,random_state=rs,max_iter=-1,probability=prob,class_weight=cw))]
         pipe = Pipeline(steps)
         return pipe
 

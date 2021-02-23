@@ -3,7 +3,7 @@
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import Normalizer
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split,GridSearchCV
 from sklearn.metrics import precision_score,recall_score,f1_score,confusion_matrix,accuracy_score
@@ -86,6 +86,6 @@ class GBC:
 
         
     def _make_pipeline(self,n_comp,n,lr,md,ss):
-        steps = [('pca',PCA(n_components=n_comp)),('GBC',GradientBoostingClassifier(n_estimators=n,learning_rate=lr,max_depth=md,subsample=ss))]
+        steps = [('normalize',Normalizer()),('pca',PCA(n_components=n_comp)),('GBC',GradientBoostingClassifier(n_estimators=n,learning_rate=lr,max_depth=md,subsample=ss))]
         pipe = Pipeline(steps)
         return pipe

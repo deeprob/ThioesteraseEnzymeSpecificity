@@ -3,7 +3,7 @@
 import pandas as pd 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import Normalizer
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split,GridSearchCV
 from sklearn.metrics import precision_score,recall_score,f1_score,confusion_matrix,accuracy_score
@@ -86,6 +86,6 @@ class NN:
                 
         
     def _make_pipeline(self,n_comp,h,lr,reg):
-        steps = [('pca',PCA(n_components=n_comp)),('NN',MLPClassifier(hidden_layer_sizes=h,activation='logistic',solver='adam',learning_rate='adaptive',learning_rate_init=lr,alpha=reg,max_iter=500))]
+        steps = [('normalize',Normalizer()),('pca',PCA(n_components=n_comp)),('NN',MLPClassifier(hidden_layer_sizes=h,activation='logistic',solver='adam',learning_rate='adaptive',learning_rate_init=lr,alpha=reg,max_iter=500))]
         pipe = Pipeline(steps)
         return pipe

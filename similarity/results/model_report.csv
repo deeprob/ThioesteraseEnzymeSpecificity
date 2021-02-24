@@ -1,0 +1,2 @@
+,min_precision,min_recall,min_accuracy,max_precision,max_recall,max_accuracy,mean_precision,mean_recall,mean_accuracy
+Similarity_Model,0.0,0.0,0.11428571428571428,0.6666666666666666,1.0,0.6,0.005100639683029389,0.0021948881368889107,0.3687371428571428

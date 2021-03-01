@@ -19,7 +19,7 @@ def get_model_results(filename):
 
 
 def save_fig(metric, metric_name):
-    filename = f'../similarity/results/{metric_name}.png'
+    filename = f"../similarity/results/{metric_name}.png"
     plt.hist(metric, bins=5, color='b')
     plt.grid()
     plt.xlim(min(metric), max(metric) + 0.1)
@@ -27,6 +27,23 @@ def save_fig(metric, metric_name):
     plt.ylabel('Counts')
     plt.title(f'{metric_name} Distribution across 10,000 simulations')
     plt.savefig(filename)
+    return
+
+
+def save_prec_acc(prec, accs):
+    figure, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 4))
+
+    axes[0].hist(prec, color='sandybrown')
+    axes[0].set_xlabel('Precision Scores')
+    axes[0].set_title('Precision Score Distribution of Similarity Model')
+
+    axes[1].hist(accs, color='darkslateblue')
+    axes[1].set_xlabel('Accuracy Scores')
+    axes[1].set_title('Accuracy Score Distribution of Similarity Model')
+
+    figure.text(0, 0.5, 'Counts', va='center', rotation='vertical')
+    figure.tight_layout()
+    plt.savefig('../similarity/results/score_dist.png')
     return
 
 
@@ -57,5 +74,6 @@ if __name__ == '__main__':
     save_fig(precisions, 'Precision')
     save_fig(recalls, 'Recall')
     save_fig(accuracies, 'Accuracy')
-
+    save_prec_acc(precisions, accuracies)
+    
     save_model_report(precisions, recalls, accuracies)

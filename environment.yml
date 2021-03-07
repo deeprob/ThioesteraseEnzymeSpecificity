@@ -1,16 +1,14 @@
 name: thio-env
 channels:
+  - conda-forge
+  - bioconda
   - defaults
 dependencies:
-  - python=3.6.3
-  - pandas
   - scikit-learn
+  - pandas
   - matplotlib
-  - jupyter
-  - multiprocess
-  - xlrd
-  - tqdm
-  - mafft
-  - imbalanced-learn
-prefix: /storage/home/dzb5732/.conda/envs/thio-env
-
+  - notebook
+  - requests
+  - beautifulsoup4
+  - biopython
+prefix: /Users/dzb5732/opt/anaconda3/envs/thio-env

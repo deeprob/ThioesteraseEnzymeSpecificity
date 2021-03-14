@@ -100,7 +100,7 @@ class ngModel:
 
 class gaangModel:
     # GAA-NGram model
-    def __init__(self,Xtrain,Xvalid,Xtest=None,k=7,s=1,inc_count=True):
+    def __init__(self,Xtrain,Xvalid,Xtest=None,k=7,s=1,inc_count=False):
 
         self.gc = GAA()
         X_gaac_train = self.gc.transform(Xtrain)
@@ -121,8 +121,8 @@ class gaangModel:
 if __name__=='__main__':
     import pandas as pd
     from sklearn.model_selection import train_test_split
-    enz_datafile = '../../data/SeqFile/EnzymeSequence.csv'
-    label_file = '../../data/LabelFiles/EnzymeLabelsMultiClass.csv'
+    enz_datafile = '../../data/seq/EnzymeSequence.csv'
+    label_file = '../../data/label/EnzymeLabelsMultiClass.csv'
     df1 = pd.read_csv(enz_datafile,header=None)
     df2 = pd.read_csv(label_file,header=None)
     df = df1.merge(df2,on=0)

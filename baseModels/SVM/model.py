@@ -2,7 +2,6 @@
 
 import pandas as pd 
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.preprocessing import Normalizer
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split,GridSearchCV
@@ -35,7 +34,7 @@ class SVM:
         if verbose:
             print('-'*5+'Initial Model Evaluation'+'-'*5)
             print('-'*5+'Training Accuracy:'+str(self.acc_train)+'-'*5)
-            print('-'*5+'Testing Accuracy:'+str(self.acc_valid)+'-'*5)
+            print('-'*5+'Validation Accuracy:'+str(self.acc_valid)+'-'*5)
         
         # Hyperparameter Optimization
         
@@ -43,22 +42,22 @@ class SVM:
             if verbose:
                 print('-'*5+'Hyperparameter Optimization'+'-'*5)
             
-            if self.Xtrain.shape[1]<75:
+            if self.Xtrain.shape[1]<55:
                 shape = self.Xtrain.shape[1]
-                try_pca = [int(0.5*shape),int(0.6*shape),int(0.75*shape)]
+                try_pca = [int(0.5*shape),int(0.6*shape)]
             else:
-                try_pca= [40,55,75]
+                try_pca= [40,55]
 
             parameters = {'pca__n_components':try_pca,
                          'SVM__C':[0.1,1,20,30],
-                         'SVM__kernel':['linear','rbf','sigmoid']}
+                         'SVM__kernel':['linear','rbf']}
             
             if multi_jobs:
                 self.n_jobs=-1
             else:
                 self.n_jobs=1
 
-            self.grid = GridSearchCV(pipeline, param_grid=parameters, cv=10, n_jobs=self.n_jobs,scoring='accuracy',verbose=0)
+            self.grid = GridSearchCV(pipeline, param_grid=parameters, cv=5, n_jobs=self.n_jobs,scoring='accuracy',verbose=0)
             self.grid.fit(self.Xtrain, self.ytrain)
             
             # print evaluation results

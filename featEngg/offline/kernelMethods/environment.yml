@@ -1,0 +1,10 @@
+name: r_kernels
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-essentials
+  - bioconductor-kebabs
+prefix: /Users/dzb5732/opt/anaconda3/envs/r_kernels

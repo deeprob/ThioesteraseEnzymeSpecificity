@@ -223,9 +223,7 @@ class TEClassification(Base):
     
     
     def get_model_offline(self,featname,featfilename,testfeatfilename=None):
-        if featname == 'CKSAAGP':
-            print(featname)
-            
+
         df1 = pd.read_csv(featfilename,header=None)
         df2 = pd.read_csv(self.label_file,header=None)
         df_feat = df1.merge(df2,on=0).set_index(0)
@@ -239,8 +237,6 @@ class TEClassification(Base):
         else:
             self.default_pca_components=self._pca_components
         
-        if featname == 'CKSAAGP':
-            print(f'{featname} train-valid data split complete')
             
         if self.df_hyperparam is not None:
             param_dict_ = dict()
@@ -253,21 +249,16 @@ class TEClassification(Base):
             param_dict_ = dict()
             
         if self.test:
-            if featname == 'CKSAAGP':
-                print(f'{featname} inside self-test')
 
             df_feat_test = pd.read_csv(testfeatfilename,header=None).set_index(0)
             X_test_feat = df_feat_test.loc[self.testenz_names].values
             if X_train_feat.shape[1] != X_test_feat.shape[1]:
                 print(featfilename)
                 
-            if featname == 'CKSAAGP':
-                print(f'{featname} object training about to start')
                 
             obj = self.object_map[self.model](X_train_feat,X_valid_feat,y_train_feat,y_valid_feat,X_test_feat,param_dict=param_dict_)
             
-            if featname == 'CKSAAGP':
-                print(f'{featname} object training ended')
+
 
         else:
             obj = self.object_map[self.model](X_train_feat,X_valid_feat,y_train_feat,y_valid_feat,param_dict=param_dict_)

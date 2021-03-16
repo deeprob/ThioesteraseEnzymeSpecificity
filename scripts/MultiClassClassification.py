@@ -9,6 +9,7 @@ import os
 import sys
 import itertools
 import numpy as np
+import scipy as sp
 import pandas as pd
 import multiprocessing as mp
 from sklearn.metrics import precision_score,recall_score
@@ -104,7 +105,7 @@ class TEClassification(Base):
         self.n_models = n_models
         self.validation_fraction = validation_fraction
         self.optimize=optimize
-        self.test = True if testfeaturefiledirs else False
+        self.test = True if testfeaturefiledirs is not None else False
         
         
         #initialize super class
@@ -127,13 +128,14 @@ class TEClassification(Base):
         self.train_df = df1.merge(df2,on=0)
         
         self.enz_names = self.train_df[0].values
+        self.enz_idx = np.arange(len(self.enz_names))
         self.X = self.train_df.iloc[:,1].values
         self.y = self.train_df.iloc[:,-1].values
         
-        self.df_hyperparam = pd.read_csv(hyperparamfile).set_index('feat_name') if hyperparamfile else None
+        self.df_hyperparam = pd.read_csv(hyperparamfile).set_index('feat_name') if hyperparamfile is not None else None
         
         # training and validation data for general use
-        self.X_train, self.X_valid, self.y_train, self.y_valid,self.enz_train,self.enz_valid = train_test_split(self.X, self.y,self.enz_names, test_size=self.validation_fraction, random_state=self.random_seed)
+        self.X_train, self.X_valid, self.y_train, self.y_valid,self.enz_train,self.enz_valid, self.enz_train_idx, self.enz_valid_idx = train_test_split(self.X, self.y,self.enz_names,self.enz_idx,test_size=self.validation_fraction, random_state=self.random_seed)
         
         self.label_file = labelfile
         
@@ -149,27 +151,40 @@ class TEClassification(Base):
         # kmer and gaakmer
         ng = ngModel(self.X_train,self.X_valid,self.X_test)
         gaang = gaangModel(self.X_train,self.X_valid,self.X_test)
-        kmernames = ['kmer','gaakmer']
-        kmerObjs = [self.get_model_online('kmer',ng.Xtrain,ng.Xvalid,self.y_train,self.y_valid,ng.Xtest),self.get_model_online('gaakmer',gaang.Xtrain,gaang.Xvalid,self.y_train,self.y_valid,gaang.Xtest)]
-
+        self.featnames = ['kmer','gaakmer']
+        self.objects = [self.get_model_online('kmer',ng.Xtrain,ng.Xvalid,self.y_train,self.y_valid,ng.Xtest),self.get_model_online('gaakmer',gaang.Xtrain,gaang.Xvalid,self.y_train,self.y_valid,gaang.Xtest)]
         
-        #generate a list of names from the directories
-        self.trainfeatfiles = [d+f.name for d in trainfeaturefiledirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]            
-        self.featnames = [f.name.replace('.csv.gz','') for d in trainfeaturefiledirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]
+        #kernels 
+        kernel_names = ['spectrumKernel','mismatchKernel','gappyKernel']
+        self.kernel_trainfeatdir = self.get_kernel_trainfeatdirs(trainfeaturefiledirs)
         
         if self.test:
-            self.testfeatfiles = [d+f.name for d in testfeaturefiledirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]
-            func_iter = list(zip(self.featnames,self.trainfeatfiles,self.testfeatfiles))
-            assert [f.name for d in trainfeaturefiledirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]==[f.name for d in testfeaturefiledirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]
-            self.objects=list(itertools.starmap(self.get_model_offline,func_iter))
+            self.kernel_testfeatdir =self.get_kernel_testfeatdirs(testfeaturefiledirs)
+            kernel_objects = [self.get_model_kernel(kn,self.kernel_trainfeatdir, self.kernel_testfeatdir) for kn in kernel_names]
+        else:
+            kernel_objects = [self.get_model_kernel(kn,self.kernel_trainfeatdir) for kn in kernel_names]
+        
+        self.featnames.extend(kernel_names)
+        self.objects.extend(kernel_objects)
+            
+        
+        # ifeat and pssm
+        if self.test:
+            self.ifeatandpssm_names, self.ifeatandpssm_trainfeatfiles = self.get_offline_trainfeatfiles(trainfeaturefiledirs)
+            self.ifeatandpssm_testfeatfiles = self.get_offline_testfeatfiles(testfeaturefiledirs)
+            func_iter = list(zip(self.ifeatandpssm_names,self.ifeatandpssm_trainfeatfiles,self.ifeatandpssm_testfeatfiles))
+            ifeatandpssm_objects=list(itertools.starmap(self.get_model_offline,func_iter))
 
         else:
-            # getting all objects together
-            func_iter = list(zip(self.featnames,self.trainfeatfiles))
-            self.objects = list(itertools.starmap(self.get_model_offline,func_iter))
-            
-        self.featnames.extend(kmernames)
-        self.objects.extend(kmerObjs)
+            self.ifeatandpssm_names, self.ifeatandpssm_trainfeatfiles = self.get_offline_trainfeatfiles(trainfeaturefiledirs)
+            func_iter = list(zip(self.ifeatandpssm_names,self.ifeatandpssm_trainfeatfiles))
+            ifeatandpssm_objects = list(itertools.starmap(self.get_model_offline,func_iter))
+        
+        self.featnames.extend(self.ifeatandpssm_names)
+        self.objects.extend(ifeatandpssm_objects)
+
+        
+        
             
         if use_feat is not None:
             assert self.n_models == len(use_feat)
@@ -198,6 +213,44 @@ class TEClassification(Base):
         
         pass
     
+    
+    def get_kernel_trainfeatdirs(self, trainfeatdirs):
+        kernel_trainfeaturefiledirs = [d for d in trainfeatdirs if 'kernelMethods' in d]
+        assert len(kernel_trainfeaturefiledirs) == 1
+        return kernel_trainfeaturefiledirs[0]
+    
+    
+    def get_kernel_testfeatdirs(self, testfeatdirs):
+        kernel_testfeaturefiledirs = [d for d in testfeatdirs if 'kernelMethods' in d]
+        assert len(kernel_testfeaturefiledirs) == 1
+        return kernel_testfeaturefiledirs[0]
+    
+    
+    def get_offline_trainfeatfiles(self, trainfeatdirs):
+
+        ifeatandpssm_trainfeatdirs = [d for d in trainfeatdirs if d != self.kernel_trainfeatdir]
+        
+        ifeatandpssm_trainfeatfiles = [d+f.name for d in ifeatandpssm_trainfeatdirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]
+        
+        featnames = [f.name.replace('.csv.gz','') for d in ifeatandpssm_trainfeatdirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]  
+        
+        return featnames, ifeatandpssm_trainfeatfiles
+    
+    
+    def get_offline_testfeatfiles(self, testfeatdirs):
+        
+        ifeatandpssm_testfeatdirs = [d for d in testfeatdirs if d != self.kernel_testfeatdir]
+
+        ifeatandpssm_testfeatfiles = [d+f.name for d in ifeatandpssm_testfeatdirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]
+        
+        featnames = [f.name.replace('.csv.gz','') for d in ifeatandpssm_testfeatdirs for f in os.scandir(d) if f.name.endswith('.csv.gz')]  
+        
+        assert featnames == self.ifeatandpssm_names
+        
+                
+        return ifeatandpssm_testfeatfiles
+
+    
     def get_model_online(self,model_name,X_train,X_valid,y_train,y_valid,X_test=None):
 
         if X_train.shape[1]<self._pca_components:
@@ -221,6 +274,48 @@ class TEClassification(Base):
             obj = self.object_map[self.model](X_train,X_valid,y_train,y_valid,param_dict=param_dict_)
         return obj
     
+    
+    def get_model_kernel(self, featname, train_file_prefix, test_file_prefix=None):
+
+        featnamealias_dict = {'spectrumKernel':'spec',
+                             'gappyKernel':'gap',
+                             'mismatchKernel':'mism'}
+
+        alias = featnamealias_dict[featname]
+
+        train_mat_file = train_file_prefix + alias + 'mat.npz'
+        train_enz_name_file = train_file_prefix + alias + 'enz_names.txt'
+
+        X = sp.sparse.load_npz(train_mat_file)
+        train_enz_names = np.genfromtxt(train_enz_name_file, dtype=str)
+
+        X_train_feat, X_valid_feat = X[self.enz_train_idx,:], X[self.enz_valid_idx,:]
+        
+        if self.df_hyperparam is not None:
+            param_dict_ = dict()
+            if self.model == 'SVM':
+                param_dict_['pca_comp'] = self.df_hyperparam.loc[featname,'pca_comp'] 
+                param_dict_['regC'] = self.df_hyperparam.loc[featname,'regC']
+                param_dict_['kernel'] = self.df_hyperparam.loc[featname,'kernel']
+        
+        else:
+            param_dict_ = dict()
+
+
+
+        if self.test:
+            test_mat_file = test_file_prefix + alias + 'mat.npz'
+            test_enz_name_file = test_file_prefix + alias + 'enz_names.txt'
+            X_test_feat = sp.sparse.load_npz(test_mat_file)
+            test_enz_names = np.genfromtxt(test_enz_name_file, dtype=str)
+
+            obj = self.object_map[self.model](X_train_feat, X_valid_feat, self.y_train, self.y_valid, X_test_feat, param_dict=param_dict_)
+
+        else:
+            obj = self.object_map[self.model](X_train_feat, X_valid_feat, self.y_train, self.y_valid, param_dict=param_dict_)
+
+        return obj
+
     
     def get_model_offline(self,featname,featfilename,testfeatfilename=None):
 

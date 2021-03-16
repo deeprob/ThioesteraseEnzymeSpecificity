@@ -2,8 +2,9 @@
 
 import pandas as pd 
 import numpy as np
+import scipy as sp
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.model_selection import train_test_split,GridSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.neural_network import MLPClassifier
@@ -14,6 +15,8 @@ class NN:
     
     def __init__(self,Xtrain,Xvalid,ytrain,yvalid,Xtest=None,random_seed=None,pca_comp=20,hlayers=(10,),lrateinit=0.1,regparam=0.01,optimize=False,verbose=True,multi_jobs=True):
         np.random.seed(random_seed)
+        
+        self.sparse= sp.sparse.issparse(Xtrain)
         
         self.Xtrain = Xtrain
         self.Xvalid = Xvalid
@@ -81,7 +84,12 @@ class NN:
             self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
         
         if Xtest:
-            self.X=np.concatenate((self.Xtrain,self.Xvalid),axis=0)
+            self.Xtest = Xtest
+            
+            if self.sparse:
+                self.X = sp.sparse.vstack((self.Xtrain,self.Xvalid))
+            else:
+                self.X=np.concatenate((self.Xtrain,self.Xvalid),axis=0)
             self.y=np.concatenate((self.ytrain,self.yvalid),axis=0)
             self.model.fit(self.X,self.y)
             self.yhattrain = self.model.predict(self.X)
@@ -90,6 +98,10 @@ class NN:
                 
         
     def _make_pipeline(self,n_comp,h,lr,reg,rs):
-        steps = [('scaler',StandardScaler()),('pca',PCA(n_components=n_comp,random_state=rs)),('NN',MLPClassifier(hidden_layer_sizes=h,activation='logistic',solver='adam',learning_rate='adaptive',learning_rate_init=lr,alpha=reg,max_iter=200,random_state=rs))]
+        
+        if not self.sparse:
+            steps = [('scaler',StandardScaler()),('pca',PCA(n_components=n_comp,random_state=rs)),('NN',MLPClassifier(hidden_layer_sizes=h,activation='logistic',solver='adam',learning_rate='adaptive',learning_rate_init=lr,alpha=reg,max_iter=200,random_state=rs))]
+        else:
+            steps = [('scaler',StandardScaler(with_mean=False)),('pca',TruncatedSVD(n_components=n_comp,random_state=rs)),('NN',MLPClassifier(hidden_layer_sizes=h,activation='logistic',solver='adam',learning_rate='adaptive',learning_rate_init=lr,alpha=reg,max_iter=200,random_state=rs))]
         pipe = Pipeline(steps)
         return pipe

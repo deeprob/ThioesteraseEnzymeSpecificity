@@ -2,8 +2,9 @@
 
 import pandas as pd 
 import numpy as np
+import scipy as sp
 from sklearn.preprocessing import Normalizer
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
 from sklearn.model_selection import train_test_split,GridSearchCV
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import GradientBoostingClassifier
@@ -14,6 +15,8 @@ class GBC:
     
     def __init__(self,Xtrain,Xvalid,ytrain,yvalid,Xtest=None,random_seed=None,pca_comp=20,nest=15,lrate=0.1,mdepth=3,ssample=1,optimize=False,verbose=True,multi_jobs=True):
         np.random.seed(random_seed)
+        
+        self.sparse= sp.sparse.issparse(Xtrain)
         
         self.Xtrain = Xtrain
         self.Xvalid = Xvalid
@@ -82,7 +85,12 @@ class GBC:
             self.acc_valid = accuracy_score(self.yvalid,self.ypredvalid)
 
         if Xtest:
-            self.X=np.concatenate((self.Xtrain,self.Xvalid),axis=0)
+            self.Xtest = Xtest
+            
+            if self.sparse:
+                self.X = sp.sparse.vstack((self.Xtrain,self.Xvalid))
+            else:
+                self.X=np.concatenate((self.Xtrain,self.Xvalid),axis=0)
             self.y=np.concatenate((self.ytrain,self.yvalid),axis=0)
             self.model.fit(self.X,self.y)
             self.yhattrain = self.model.predict(self.X)
@@ -91,6 +99,13 @@ class GBC:
 
         
     def _make_pipeline(self,n_comp,n,lr,md,ss,rs):
-        steps = [('normalize',Normalizer()),('pca',PCA(n_components=n_comp,random_state=rs)),('GBC',GradientBoostingClassifier(n_estimators=n,learning_rate=lr,max_depth=md,subsample=ss,n_iter_no_change=5,tol=1e-4,random_state=rs))]
+        
+        if not self.sparse:
+            
+            steps = [('normalize',Normalizer()),('pca',PCA(n_components=n_comp,random_state=rs)),('GBC',GradientBoostingClassifier(n_estimators=n,learning_rate=lr,max_depth=md,subsample=ss,n_iter_no_change=5,tol=1e-4,random_state=rs))]
+        
+        else:
+            steps = [('normalize',Normalizer()),('pca',TruncatedSVD(n_components=n_comp,random_state=rs)),('GBC',GradientBoostingClassifier(n_estimators=n,learning_rate=lr,max_depth=md,subsample=ss,n_iter_no_change=5,tol=1e-4,random_state=rs))]
+            
         pipe = Pipeline(steps)
         return pipe

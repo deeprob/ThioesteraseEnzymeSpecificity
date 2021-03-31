@@ -1,2 +1,2 @@
 ensemble,min_precision,max_precision,mean_precision,std_precision,min_recall,max_recall,mean_recall,std_recall,min_accuracy,max_accuracy,mean_accuracy,std_accuracy
-ensemble,0.77,1.0,0.88,0.07,0.83,1.0,0.91,0.07,0.76,0.93,0.82,0.05
+ensemble,0.56,1.0,0.87,0.09,0.55,1.0,0.89,0.08,0.62,0.97,0.8,0.06

@@ -106,6 +106,7 @@ class gaangModel:
         self.Xtrain, self.Xvalid = self.ng.transform(self.Xtrain_raw), self.ng.transform(self.Xvalid_raw)
 
         if Xtest is not None:
-            self.Xtest = self.ng.transform(Xtest)
+            X_gaac_test = self.gc.transform(Xtest)
+            self.Xtest = self.ng.transform(X_gaac_test)
         else:
             self.Xtest = None

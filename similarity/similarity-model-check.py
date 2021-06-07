@@ -14,12 +14,13 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 
 similarity_matrix = '../similarity/similarity_matrix.txt'
-label_file = '../data/label/EnzymeLabelsMultiClass.csv'
+label_file = '../data/label/train_enz_label.csv'
 
 
 def get_matrix():
     mat = np.loadtxt(similarity_matrix, delimiter=',')
-    return mat
+    mat[mat==0] = 1e-9
+    return 1/mat
 
 
 def get_labels():
@@ -47,7 +48,7 @@ def get_train_valid_split(mat, y):
 
 
 def get_predictions(X_train, X_valid, y_train):
-    neigh = KNeighborsClassifier(n_neighbors=3, algorithm='brute', metric='precomputed')
+    neigh = KNeighborsClassifier(n_neighbors=5, algorithm='brute', metric='precomputed')
     neigh.fit(X_train, y_train)
 
     y_hat_valid = neigh.predict(X_valid)

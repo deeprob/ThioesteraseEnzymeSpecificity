@@ -9,7 +9,7 @@ from model.classifier import TEClassification
 
 def get_te(enz_file, test_enz_file, label_file, train_feat_dirs, test_feat_dirs, hyper_param_file, base_algo, k, opt, rs):
     te = TEClassification(enz_file, test_enz_file, label_file, train_feat_dirs, test_feat_dirs, 
-                          hyperparamfile=hyper_param_file, random_seed=rs, n_models=k, model=base_algo, optimize=opt)
+                          hyper_param_file=hyper_param_file, random_seed=rs, n_models=k, model=base_algo, optimize=opt)
     return te
 
 
@@ -55,7 +55,7 @@ def indfeat_performance(enz_file, test_enz_file, label_file, train_feat_dirs, te
     te = get_te(enz_file, test_enz_file, label_file, train_feat_dirs, test_feat_dirs, hyper_param_file, base_algo, k, opt, rs)
     val_iters = list(map(get_validation_iter, te.objects))
     mets = list(map(get_metrics, val_iters))
-    return list(zip(te.featnames, mets))
+    return list(zip(te.feat_names, mets))
 
 
 # # Parametric sweep of ensemble model hyperparameter k

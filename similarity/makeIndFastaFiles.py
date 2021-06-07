@@ -1,4 +1,4 @@
-fasta_file = '../data/seq/EnzymeFasta.fa'
+fasta_file = '../data/seq/train_enz.fa'
 
 
 def get_enzymes():

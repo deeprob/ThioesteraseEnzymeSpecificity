@@ -36,7 +36,7 @@ def save_similarity_matrix():
 if __name__ == '__main__':
 
     for i, file in enumerate(filenames):
-        print(i)
+        print("*", end="")
         other_files = filenames[i+1:]
         file1 = file
         for file2 in other_files:

@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 
 from .meta import Ensemble
 from .base import SVM, GBC, NN
-from .kmer_features import ngModel, gaangModel
+from ngrampro import NGModel, GAANGModel
 
 
 class Base:
@@ -86,8 +86,8 @@ class Base:
 
 class TEClassification(Base):
 
-    def __init__(self, enzseqdata, testenzseqdata, labelfile, trainfeaturefiledirs, testfeaturefiledirs, use_feat=None,
-                 hyperparamfile=None, model='SVM', random_seed=None, pca_components=55, n_models=5,
+    def __init__(self, train_enz_seq, test_enz_seq, label_file, train_feature_dirs, test_feature_dirs, use_feat=None,
+                 hyper_param_file=None, model='SVM', random_seed=None, pca_components=55, n_models=5,
                  validation_fraction=0.25, optimize=False):
 
         self.random_seed = random_seed
@@ -96,7 +96,7 @@ class TEClassification(Base):
         self.n_models = n_models
         self.validation_fraction = validation_fraction
         self.optimize = optimize
-        self.test = True if testfeaturefiledirs is not None else False
+        self.test = True if test_feature_dirs is not None else False
 
         # initialize super class
         if self.model == 'SVM':
@@ -114,8 +114,8 @@ class TEClassification(Base):
         self.object_map = {'SVM': self.get_SVM, 'NN': self.get_NN, 'GBC': self.get_GBC}
 
         # original data based on which everything is obtained
-        df1 = pd.read_csv(enzseqdata, header=None)
-        df2 = pd.read_csv(labelfile, header=None)
+        df1 = pd.read_csv(train_enz_seq, header=None)
+        df2 = pd.read_csv(label_file, header=None)
         self.train_df = df1.merge(df2, on=0)
 
         self.enz_names = self.train_df[0].values
@@ -123,62 +123,85 @@ class TEClassification(Base):
         self.X = self.train_df.iloc[:, 1].values
         self.y = self.train_df.iloc[:, -1].values
 
-        self.df_hyperparam = pd.read_csv(hyperparamfile).set_index('feat_name') if hyperparamfile is not None else None
+        self.df_hyper_param = pd.read_csv(hyper_param_file).set_index('feat_name') if hyper_param_file is not None else None
 
         # training and validation data for general use
         self.X_train, self.X_valid, self.y_train, self.y_valid, self.enz_train, self.enz_valid, self.enz_train_idx, self.enz_valid_idx = train_test_split(
             self.X, self.y, self.enz_names, self.enz_idx, test_size=self.validation_fraction,
             random_state=self.random_seed)
 
-        self.label_file = labelfile
+        self.label_file = label_file
 
         # test data
         if self.test:
-            self.test_df = pd.read_csv(testenzseqdata, header=None)
-            self.testenz_names = self.test_df[0].values
+            self.test_df = pd.read_csv(test_enz_seq, header=None)
+            self.test_enz_names = self.test_df[0].values
             self.X_test = self.test_df.iloc[:, 1].values
         else:
             self.X_test = None
 
         # kmer and gaakmer
-        ng = ngModel(self.X_train, self.X_valid, self.X_test)
-        gaang = gaangModel(self.X_train, self.X_valid, self.X_test)
-        self.featnames = ['kmer', 'gaakmer']
-        self.objects = [self.get_model_online('kmer', ng.Xtrain, ng.Xvalid, self.y_train, self.y_valid, ng.Xtest),
-                        self.get_model_online('gaakmer', gaang.Xtrain, gaang.Xvalid, self.y_train, self.y_valid,
-                                              gaang.Xtest)]
+        ng = NGModel(self.X_train, self.X_valid, self.X_test)
+        gaang = GAANGModel(self.X_train, self.X_valid, self.X_test)
+        self.feat_names = ['kmer', 'gaakmer']
+        self.objects = [self.get_model_online('kmer', ng.x_train, ng.x_valid, self.y_train, self.y_valid, ng.x_test),
+                        self.get_model_online('gaakmer', gaang.x_train, gaang.x_valid, self.y_train, self.y_valid,
+                                              gaang.x_test)]
 
         # kernels
         kernel_names = ['spectrumKernel', 'mismatchKernel', 'gappyKernel']
-        self.kernel_trainfeatdir = self.get_kernel_trainfeatdirs(trainfeaturefiledirs)
+        self.kernel_trainfeatdir = self.get_kernel_trainfeatdirs(train_feature_dirs)
 
         if self.test:
-            self.kernel_testfeatdir = self.get_kernel_testfeatdirs(testfeaturefiledirs)
+            self.kernel_testfeatdir = self.get_kernel_testfeatdirs(test_feature_dirs)
             kernel_objects = [self.get_model_kernel(kn, self.kernel_trainfeatdir, self.kernel_testfeatdir) for kn in
                               kernel_names]
         else:
             kernel_objects = [self.get_model_kernel(kn, self.kernel_trainfeatdir) for kn in kernel_names]
 
-        self.featnames.extend(kernel_names)
+        self.feat_names.extend(kernel_names)
         self.objects.extend(kernel_objects)
 
-        # ifeat and pssm
+        # ifeat
         if self.test:
-            self.ifeatandpssm_names, self.ifeatandpssm_trainfeatfiles = self.get_offline_trainfeatfiles(
-                trainfeaturefiledirs)
-            self.ifeatandpssm_testfeatfiles = self.get_offline_testfeatfiles(testfeaturefiledirs)
+            self.ifeat_traindirs, self.ifeat_testdirs = self.get_ifeat_trainfeatdirs(train_feature_dirs), \
+                                                        self.get_ifeat_testfeatdirs(test_feature_dirs)
+            self.ifeat_names, self.ifeat_trainfeatfiles = self.get_ifeat_trainfeatfiles(self.ifeat_traindirs)
+            self.ifeat_names_test, self.ifeat_testfeatfiles = self.get_ifeat_testfeatfiles(self.ifeat_testdirs)
+            assert self.ifeat_names == self.ifeat_names_test
             func_iter = list(
-                zip(self.ifeatandpssm_names, self.ifeatandpssm_trainfeatfiles, self.ifeatandpssm_testfeatfiles))
-            ifeatandpssm_objects = list(itertools.starmap(self.get_model_offline, func_iter))
+                zip(self.ifeat_names, self.ifeat_trainfeatfiles, self.ifeat_testfeatfiles))
+            ifeat_objects = list(itertools.starmap(self.get_model_ifeat, func_iter))
 
         else:
-            self.ifeatandpssm_names, self.ifeatandpssm_trainfeatfiles = self.get_offline_trainfeatfiles(
-                trainfeaturefiledirs)
-            func_iter = list(zip(self.ifeatandpssm_names, self.ifeatandpssm_trainfeatfiles))
-            ifeatandpssm_objects = list(itertools.starmap(self.get_model_offline, func_iter))
+            self.ifeat_traindirs = self.get_ifeat_trainfeatdirs(train_feature_dirs)
+            self.ifeat_names, self.ifeat_trainfeatfiles = self.get_ifeat_trainfeatfiles(self.ifeat_traindirs)
+            func_iter = list(zip(self.ifeat_names, self.ifeat_trainfeatfiles))
+            ifeat_objects = list(itertools.starmap(self.get_model_ifeat, func_iter))
 
-        self.featnames.extend(self.ifeatandpssm_names)
-        self.objects.extend(ifeatandpssm_objects)
+        self.feat_names.extend(self.ifeat_names)
+        self.objects.extend(ifeat_objects)
+
+        # pssm
+        if self.test:
+            self.pssm_traindirs, self.pssm_testdirs = self.get_pssm_trainfeatdirs(train_feature_dirs), \
+                                                        self.get_pssm_testfeatdirs(test_feature_dirs)
+            self.pssm_names, self.pssm_trainfeatfiles = self.get_pssm_trainfeatfiles(self.pssm_traindirs)
+            self.pssm_names_test, self.pssm_testfeatfiles = self.get_pssm_testfeatfiles(self.pssm_testdirs)
+            assert self.pssm_names == self.pssm_names_test
+            
+            func_iter = list(
+                zip(self.pssm_names, self.pssm_trainfeatfiles, self.pssm_testfeatfiles))
+            pssm_objects = list(itertools.starmap(self.get_model_pssm, func_iter))
+
+        else:
+            self.pssm_traindirs = self.get_pssm_trainfeatdirs(train_feature_dirs)
+            self.pssm_names, self.pssm_trainfeatfiles = self.get_pssm_trainfeatfiles(self.pssm_traindirs)
+            func_iter = list(zip(self.pssm_names, self.pssm_trainfeatfiles))
+            pssm_objects = list(itertools.starmap(self.get_model_pssm, func_iter))
+
+        self.feat_names.extend(self.pssm_names)
+        self.objects.extend(pssm_objects)
 
         if use_feat is not None:
             assert self.n_models == len(use_feat)
@@ -216,31 +239,65 @@ class TEClassification(Base):
         assert len(kernel_testfeaturefiledirs) == 1
         return kernel_testfeaturefiledirs[0]
 
-    def get_offline_trainfeatfiles(self, trainfeatdirs):
+    def get_ifeat_trainfeatdirs(self, trainfeatdirs):
+        ifeat_traindirs = [d for d in trainfeatdirs if 'ifeatpro' in d]
+        assert len(ifeat_traindirs) == 1
+        return ifeat_traindirs[0]
 
-        ifeatandpssm_trainfeatdirs = [d for d in trainfeatdirs if d != self.kernel_trainfeatdir]
+    def get_ifeat_testfeatdirs(self, testfeatdirs):
+        ifeat_testdirs = [d for d in testfeatdirs if 'ifeatpro' in d]
+        assert len(ifeat_testdirs) == 1
+        return ifeat_testdirs[0]
 
-        ifeatandpssm_trainfeatfiles = [d + f.name for d in ifeatandpssm_trainfeatdirs for f in os.scandir(d) if
-                                       f.name.endswith('.csv.gz')]
+    def get_pssm_trainfeatdirs(self, trainfeatdirs):
+        pssm_traindirs = [d for d in trainfeatdirs if 'pssmpro' in d]
+        assert len(pssm_traindirs) == 1
+        return pssm_traindirs[0]
 
-        featnames = [f.name.replace('.csv.gz', '') for d in ifeatandpssm_trainfeatdirs for f in os.scandir(d) if
-                     f.name.endswith('.csv.gz')]
+    def get_pssm_testfeatdirs(self, testfeatdirs):
+        pssm_testdirs = [d for d in testfeatdirs if 'pssmpro' in d]
+        assert len(pssm_testdirs) == 1
+        return pssm_testdirs[0]
 
-        return featnames, ifeatandpssm_trainfeatfiles
+    def get_ifeat_trainfeatfiles(self, ifeat_traindirs):
 
-    def get_offline_testfeatfiles(self, testfeatdirs):
+        ifeat_trainfiles = [ifeat_traindirs + f.name for f in os.scandir(ifeat_traindirs) if
+                                       f.name.endswith('.csv')]
 
-        ifeatandpssm_testfeatdirs = [d for d in testfeatdirs if d != self.kernel_testfeatdir]
+        featnames = [f.name.replace('.csv', '') for f in os.scandir(ifeat_traindirs) if
+                                       f.name.endswith('.csv')]
 
-        ifeatandpssm_testfeatfiles = [d + f.name for d in ifeatandpssm_testfeatdirs for f in os.scandir(d) if
-                                      f.name.endswith('.csv.gz')]
+        return featnames, ifeat_trainfiles
 
-        featnames = [f.name.replace('.csv.gz', '') for d in ifeatandpssm_testfeatdirs for f in os.scandir(d) if
-                     f.name.endswith('.csv.gz')]
+    def get_ifeat_testfeatfiles(self, ifeat_testdirs):
 
-        assert featnames == self.ifeatandpssm_names
+        ifeat_testfiles = [ifeat_testdirs + f.name for f in os.scandir(ifeat_testdirs) if
+                                       f.name.endswith('.csv')]
 
-        return ifeatandpssm_testfeatfiles
+        featnames = [f.name.replace('.csv', '') for f in os.scandir(ifeat_testdirs) if
+                                       f.name.endswith('.csv')]
+
+        return featnames, ifeat_testfiles
+
+    def get_pssm_trainfeatfiles(self, pssm_traindirs):
+
+        pssm_trainfiles = [pssm_traindirs + f.name for f in os.scandir(pssm_traindirs) if
+                                       f.name.endswith('.csv')]
+
+        featnames = [f.name.replace('.csv', '') for f in os.scandir(pssm_traindirs) if
+                                       f.name.endswith('.csv')]
+
+        return featnames, pssm_trainfiles
+
+    def get_pssm_testfeatfiles(self, pssm_testdirs):
+
+        pssm_testfiles = [pssm_testdirs + f.name for f in os.scandir(pssm_testdirs) if
+                                       f.name.endswith('.csv')]
+
+        featnames = [f.name.replace('.csv', '') for f in os.scandir(pssm_testdirs) if
+                                       f.name.endswith('.csv')]
+
+        return featnames, pssm_testfiles
 
     def get_model_online(self, model_name, X_train, X_valid, y_train, y_valid, X_test=None):
 
@@ -249,12 +306,12 @@ class TEClassification(Base):
         else:
             self.default_pca_components = self._pca_components
 
-        if self.df_hyperparam is not None:
+        if self.df_hyper_param is not None:
             param_dict_ = dict()
             if self.model == 'SVM':
-                param_dict_['pca_comp'] = self.df_hyperparam.loc[model_name, 'pca_comp']
-                param_dict_['regC'] = self.df_hyperparam.loc[model_name, 'regC']
-                param_dict_['kernel'] = self.df_hyperparam.loc[model_name, 'kernel']
+                param_dict_['pca_comp'] = self.df_hyper_param.loc[model_name, 'pca_comp']
+                param_dict_['regC'] = self.df_hyper_param.loc[model_name, 'regC']
+                param_dict_['kernel'] = self.df_hyper_param.loc[model_name, 'kernel']
 
         else:
             param_dict_ = dict()
@@ -281,12 +338,12 @@ class TEClassification(Base):
 
         X_train_feat, X_valid_feat = X[self.enz_train_idx, :], X[self.enz_valid_idx, :]
 
-        if self.df_hyperparam is not None:
+        if self.df_hyper_param is not None:
             param_dict_ = dict()
             if self.model == 'SVM':
-                param_dict_['pca_comp'] = self.df_hyperparam.loc[featname, 'pca_comp']
-                param_dict_['regC'] = self.df_hyperparam.loc[featname, 'regC']
-                param_dict_['kernel'] = self.df_hyperparam.loc[featname, 'kernel']
+                param_dict_['pca_comp'] = self.df_hyper_param.loc[featname, 'pca_comp']
+                param_dict_['regC'] = self.df_hyper_param.loc[featname, 'regC']
+                param_dict_['kernel'] = self.df_hyper_param.loc[featname, 'kernel']
 
         else:
             param_dict_ = dict()
@@ -306,7 +363,49 @@ class TEClassification(Base):
 
         return obj
 
-    def get_model_offline(self, featname, featfilename, testfeatfilename=None):
+    def get_model_ifeat(self, featname, featfilename, testfeatfilename=None):
+
+        df1 = pd.read_csv(featfilename, index_col=0)
+        df2 = pd.read_csv(self.label_file, index_col = 0, header=None)
+        df_feat = df1.merge(df2, left_index=True, right_index=True) 
+        df_feat_train = df_feat.loc[self.enz_train]
+        df_feat_valid = df_feat.loc[self.enz_valid]
+        X_train_feat, y_train_feat = df_feat_train.iloc[:, 0:-1].values, df_feat_train.iloc[:, -1].values
+        X_valid_feat, y_valid_feat = df_feat_valid.iloc[:, 0:-1].values, df_feat_valid.iloc[:, -1].values
+
+        if X_train_feat.shape[1] < self._pca_components:
+            self.default_pca_components = int(0.75 * X_train_feat.shape[1])
+        else:
+            self.default_pca_components = self._pca_components
+
+        if self.df_hyper_param is not None:
+            param_dict_ = dict()
+            if self.model == 'SVM':
+                param_dict_['pca_comp'] = self.df_hyper_param.loc[featname, 'pca_comp']
+                param_dict_['regC'] = self.df_hyper_param.loc[featname, 'regC']
+                param_dict_['kernel'] = self.df_hyper_param.loc[featname, 'kernel']
+
+        else:
+            param_dict_ = dict()
+
+        if self.test:
+
+            df_feat_test = pd.read_csv(testfeatfilename, index_col=0)
+            X_test_feat = df_feat_test.loc[self.test_enz_names].values
+            if X_train_feat.shape[1] != X_test_feat.shape[1]:
+                print(featfilename)
+
+            obj = self.object_map[self.model](X_train_feat, X_valid_feat, y_train_feat, y_valid_feat, X_test_feat,
+                                              param_dict=param_dict_)
+
+
+
+        else:
+            obj = self.object_map[self.model](X_train_feat, X_valid_feat, y_train_feat, y_valid_feat,
+                                              param_dict=param_dict_)
+        return obj
+
+    def get_model_pssm(self, featname, featfilename, testfeatfilename=None):
 
         df1 = pd.read_csv(featfilename, header=None)
         df2 = pd.read_csv(self.label_file, header=None)
@@ -321,12 +420,12 @@ class TEClassification(Base):
         else:
             self.default_pca_components = self._pca_components
 
-        if self.df_hyperparam is not None:
+        if self.df_hyper_param is not None:
             param_dict_ = dict()
             if self.model == 'SVM':
-                param_dict_['pca_comp'] = self.df_hyperparam.loc[featname, 'pca_comp']
-                param_dict_['regC'] = self.df_hyperparam.loc[featname, 'regC']
-                param_dict_['kernel'] = self.df_hyperparam.loc[featname, 'kernel']
+                param_dict_['pca_comp'] = self.df_hyper_param.loc[featname, 'pca_comp']
+                param_dict_['regC'] = self.df_hyper_param.loc[featname, 'regC']
+                param_dict_['kernel'] = self.df_hyper_param.loc[featname, 'kernel']
 
         else:
             param_dict_ = dict()
@@ -334,7 +433,7 @@ class TEClassification(Base):
         if self.test:
 
             df_feat_test = pd.read_csv(testfeatfilename, header=None).set_index(0)
-            X_test_feat = df_feat_test.loc[self.testenz_names].values
+            X_test_feat = df_feat_test.loc[self.test_enz_names].values
             if X_train_feat.shape[1] != X_test_feat.shape[1]:
                 print(featfilename)
 
@@ -353,12 +452,12 @@ class TEClassification(Base):
         sorted_idx = np.argsort(o_valid_accs)[::-1]
         best_idx = sorted_idx[:self.n_models]
 
-        return np.array(self.featnames)[best_idx], np.array(Os)[best_idx]
+        return np.array(self.feat_names)[best_idx], np.array(Os)[best_idx]
 
     def select_predef_models(self, pre_def_models):
         model_objs = []
 
-        for fname, fobj in zip(self.featnames, self.objects):
+        for fname, fobj in zip(self.feat_names, self.objects):
             if fname in pre_def_models:
                 model_objs.append(fobj)
 
@@ -369,4 +468,4 @@ class TEClassification(Base):
 
     def get_best_hps(self):
         hps = list(map(self.get_best_hp, self.objects))
-        return list(zip(self.featnames, hps))
+        return list(zip(self.feat_names, hps))

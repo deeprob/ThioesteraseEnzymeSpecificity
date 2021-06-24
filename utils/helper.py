@@ -1,4 +1,4 @@
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, matthews_corrcoef
 import sys
 sys.path.append("../")
 
@@ -43,8 +43,12 @@ def get_accuracy(y,yhat):
     return round(accuracy_score(y,yhat),2)
 
 
+def get_mcc(y,yhat):
+    return round(matthews_corrcoef(y,yhat),2)
+
+
 def get_metrics(val_iter):
-    return get_precision(*val_iter), get_recall(*val_iter), get_accuracy(*val_iter)
+    return get_precision(*val_iter), get_recall(*val_iter), get_accuracy(*val_iter), get_mcc(*val_iter)
 
 
 def get_validation_iter(obj):

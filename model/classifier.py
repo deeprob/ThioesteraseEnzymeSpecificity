@@ -365,9 +365,9 @@ class TEClassification(Base):
 
     def get_model_ifeat(self, featname, featfilename, testfeatfilename=None):
 
-        df1 = pd.read_csv(featfilename, index_col=0)
-        df2 = pd.read_csv(self.label_file, index_col = 0, header=None)
-        df_feat = df1.merge(df2, left_index=True, right_index=True) 
+        df1 = pd.read_csv(featfilename, header=None)
+        df2 = pd.read_csv(self.label_file, header=None)
+        df_feat = df1.merge(df2, on=0).set_index(0) 
         df_feat_train = df_feat.loc[self.enz_train]
         df_feat_valid = df_feat.loc[self.enz_valid]
         X_train_feat, y_train_feat = df_feat_train.iloc[:, 0:-1].values, df_feat_train.iloc[:, -1].values
@@ -390,7 +390,7 @@ class TEClassification(Base):
 
         if self.test:
 
-            df_feat_test = pd.read_csv(testfeatfilename, index_col=0)
+            df_feat_test = pd.read_csv(testfeatfilename, header=None).set_index(0)
             X_test_feat = df_feat_test.loc[self.test_enz_names].values
             if X_train_feat.shape[1] != X_test_feat.shape[1]:
                 print(featfilename)

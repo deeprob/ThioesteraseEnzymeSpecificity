@@ -1,3 +1,7 @@
+
+
+[![DOI](https://zenodo.org/badge/286865245.svg)](https://zenodo.org/badge/latestdoi/286865245)
+
 # EnZymClass Tutorial
 
 

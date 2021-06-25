@@ -26,7 +26,7 @@
 
    $conda create -n te_env python=3.9 scikit-learn pandas jupyter blast bioconductor-kebabs=1.24.0
 
-4. Install ifeatpro, ngrampro and pssmpro using pip after activating the conda environment. Run the following commands in MacOS/Linux. If you have Windows, use WSL.
+4. Install ifeatpro [link](https://pypi.org/project/ifeatpro/), ngrampro [link](https://pypi.org/project/ngrampro/) and pssmpro [link](https://pypi.org/project/pssmpro/) using pip after activating the conda environment. Run the following commands in MacOS/Linux. If you have Windows, use WSL.
    
    \$ conda activate te_env
    

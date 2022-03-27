@@ -10,7 +10,7 @@ import time
 import numpy as np
 import multiprocessing as mp
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, matthews_corrcoef
 
 
 similarity_matrix = '../similarity/similarity_matrix.txt'
@@ -59,13 +59,14 @@ def get_model_metrics(y_valid, y_hat_valid):
     acc = accuracy_score(y_valid, y_hat_valid)
     rec = recall_score(y_valid, y_hat_valid, labels=[3], average='micro')
     prec = precision_score(y_valid, y_hat_valid, labels=[3], average='micro')
-    return prec, rec, acc
+    mcc = matthews_corrcoef(y_valid, y_hat_valid)
+    return prec, rec, acc, mcc
 
 
 def save_metrics(model_metrics):
     with open('../similarity/results/model_sims.csv', 'w') as f:
-        for i, j, k in model_metrics:
-            f.write(f'{i},{j},{k}')
+        for i, j, k, l in model_metrics:
+            f.write(f'{i},{j},{k}, {l}')
             f.write('\n')
     return
 
@@ -86,9 +87,9 @@ def main(random_seed):
     y_hat = get_predictions(Xtrain, Xvalid, ytrain)
 
     # get model performance
-    prec, rec, acc = get_model_metrics(yvalid, y_hat)
+    prec, rec, acc, mcc = get_model_metrics(yvalid, y_hat)
 
-    return prec, rec, acc
+    return prec, rec, acc, mcc
 
 
 if __name__ == '__main__':
